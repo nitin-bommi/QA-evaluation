@@ -1,0 +1,11 @@
+ANN-artificial neural network
+SVM-support vector machines
+NN-neural network
+MLP-multi layer perceptron
+FF-feed forward
+RBFN-radial basis function network
+MSE-mean squared error
+RMSE-root mean squared error
+MLE-maximum likelihood estimation
+MAP-maximum aposteriori
+MAE-mean absolute error
