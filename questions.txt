@@ -1,0 +1,19 @@
+What are autoencoders? Explain the different layers of autoencoders and mention three practical usages of them?
+
+What is an activation function and discuss the use of an activation function? Explain three different types of activation functions?
+
+You are using a deep neural network for a prediction task. After training your model, you notice that it is strongly overfitting the training set and that the performance on the test isn’t good. What can you do to reduce overfitting?
+
+Why should we use Batch Normalization?
+
+How to know whether your model is suffering from the problem of Exploding Gradients?
+
+Can you name and explain a few hyperparameters used for training a neural network?
+
+Can you explain the parameter sharing concept in deep learning?
+
+Describe the architecture of a typical Convolutional Neural Network (CNN)?
+
+What is the Vanishing Gradient Problem in Artificial Neural Networks and How to fix it?
+
+When it comes to training an artificial neural network, what could be the reason why the loss doesn't decrease in a few epochs?

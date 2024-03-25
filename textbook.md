@@ -1,0 +1,175 @@
+Autoencoders are one of the deep learning types used for unsupervised learning. There are key layers of autoencoders, which are the input layer, encoder, bottleneck hidden layer, decoder, and output.
+
+The three layers of the autoencoder are:-
+1) Encoder - Compresses the input data to an encoded representation which is typically much smaller than the input data.
+2) Latent Space Representation/ Bottleneck/ Code - Compact summary of the input containing the most important features
+3) Decoder - Decompresses the knowledge representation and reconstructs the data back from its encoded form.
+Then a loss function is used at the top to compare the input and output images.
+NOTE- It's a requirement that the dimensionality of the input and output be the same. Everything in the middle can be played with.
+
+Autoencoders have a wide variety of usage in the real world. The following are some of the popular ones:
+
+1. Transformers and Big Bird (Autoencoders is one of these components in both algorithms): Text Summarizer, Text Generator
+2. Image compression
+3. Nonlinear version of PCA
+
+---
+
+In mathematical terms, the activation function serves as a gate between the current neuron input and its output, going to the next level. Basically, it decides whether neurons should be activated or not.
+It is used to introduce non-linearity into a model.
+
+Activation functions are added to introduce non-linearity to the network, it doesn't matter how many layers or how many neurons your net has, the output will be linear combinations of the input in the absence of activation functions. In other words, activation functions are what make a linear regression model different from a neural network. We need non-linearity, to capture more complex features and model more complex variations that simple linear models can not capture.
+
+There are a lot of activation functions:
+
+* Sigmoid function: f(x) = 1/(1+exp(-x))
+
+The output value of it is between 0 and 1, we can use it for classification. It has some problems like the gradient vanishing on the extremes, also it is computationally expensive since it uses exp.
+
+* Relu: f(x) = max(0,x)
+
+it returns 0 if the input is negative and the value of the input if the input is positive. It solves the problem of vanishing gradient for the positive side, however, the problem is still on the negative side. It is fast because we use a linear function in it.
+
+* Leaky ReLU:
+
+F(x)= ax, x<0
+F(x)= x, x>=0
+
+It solves the problem of vanishing gradient on both sides by returning a value “a” on the negative side and it does the same thing as ReLU for the positive side.
+
+* Softmax: it is usually used at the last layer for a classification problem because it returns a set of probabilities, where the sum of them is 1. Moreover, it is compatible with cross-entropy loss, which is usually the loss function for classification problems.
+
+---
+
+To reduce overfitting in a deep neural network changes can be made in three places/stages: The input data to the network, the network architecture, and the training process:
+
+1. The input data to the network:
+
+* Check if all the features are available and reliable
+* Check if the training sample distribution is the same as the validation and test set distribution. Because if there is a difference in validation set distribution then it is hard for the model to predict as these complex patterns are unknown to the model.
+* Check for train / valid data contamination (or leakage)
+* The dataset size is enough, if not try data augmentation to increase the data size
+* The dataset is balanced
+
+2. Network architecture:
+* Overfitting could be due to model complexity. Question each component:
+  * can fully connect layers be replaced with convolutional + pooling layers?
+  * what is the justification for the number of layers and number of neurons chosen? Given how hard it is to tune these, can a pre-trained model be used?
+  * Add regularization - lasso (l1), ridge (l2), elastic net (both)
+* Add dropouts
+* Add batch normalization
+
+3. The training process:
+* Improvements in validation losses should decide when to stop training. Use callbacks for early stopping when there are no significant changes in the validation loss and restore_best_weights.
+
+---
+
+Batch normalization is a technique for training very deep neural networks that standardizes the inputs to a layer for each mini-batch.
+
+Usually, a dataset is fed into the network in the form of batches where the distribution of the data differs for every batch size. By doing this, there might be chances of vanishing gradient or exploding gradient when it tries to backpropagate. In order to combat these issues, we can use BN (with irreducible error) layer mostly on the inputs to the layer before the activation function in the previous layer and after fully connected layers.
+
+
+Batch Normalisation has the following effects on the Neural Network:
+
+1. Robust Training of the deeper layers of the network.
+2. Better covariate-shift proof NN Architecture.
+3. Has a slight regularisation effect.
+4. Centred and Controlled values of Activation.
+5. Tries to Prevent exploding/vanishing gradient.
+6. Faster Training/Convergence to the minimum loss function
+
+By taking incremental steps towards the minimal value, the gradient descent algorithm aims to minimize the error. The weights and biases in a neural network are updated using these processes. However, at times, the steps grow excessively large, resulting in increased updates to weights and bias terms to the point where the weights overflow (or become NaN, that is, Not a Number). An exploding gradient is the result of this, and it is an unstable method.
+
+There are some subtle signs that you may be suffering from exploding gradients during the training of your network, such as:
+
+1. The model is unable to get traction on your training data (e g. poor loss).
+2. The model is unstable, resulting in large changes in loss from update to update.
+3. The model loss goes to NaN during training.
+
+If you have these types of problems, you can dig deeper to see if you have a problem with exploding gradients. There are some less subtle signs that you can use to confirm that you have exploding gradients:
+
+1. The model weights quickly become very large during training.
+2. The model weights go to NaN values during training.
+3. The error gradient values are consistently above 1.0 for each node and layer during training.
+
+---
+
+Hyperparameters are any parameter in the model that affects the performance but is not learned from the data unlike parameters ( weights and biases), the only way to change it is manually by the user.
+
+
+1. Number of nodes: number of inputs in each layer.
+
+2. Batch normalization: normalization/standardization of inputs in a layer.
+
+3. Learning rate: the rate at which weights are updated.
+
+4. Dropout rate: percent of nodes to drop temporarily during the forward pass.
+
+5. Kernel: matrix to perform dot product of image array with
+
+6. Activation function: defines how the weighted sum of inputs is transformed into outputs (e.g. tanh, sigmoid, softmax, Relu, etc)
+
+7. Number of epochs: number of passes an algorithm has to perform for training
+
+8. Batch size: number of samples to pass through the algorithm individually. E.g. if the dataset has 1000 records and we set a batch size of 100 then the dataset will be divided into 10 batches which will be propagated to the algorithm one after another.
+
+9. Momentum: Momentum can be seen as a learning rate adaptation technique that adds a fraction of the past update vector to the current update vector. This helps damps oscillations and speed up progress towards the minimum.
+
+10. Optimizers: They focus on getting the learning rate right.
+
+* Adagrad optimizer: Adagrad uses a large learning rate for infrequent features and a smaller learning rate for frequent features.
+
+* Other optimizers, like Adadelta, RMSProp, and Adam, make further improvements to fine-tuning the learning rate and momentum to get to the optimal weights and bias. Thus getting the learning rate right is key to well-trained models.
+
+11. Learning Rate: Controls how much to update weights & bias (w+b) terms after training on each batch. Several helpers are used to getting the learning rate right.
+
+---
+
+Parameter sharing is the method of sharing weights by all neurons in a particular feature map. Therefore helps to reduce the number of parameters in the whole system, making it computationally cheap. It basically means that the same parameters will be used to represent different transformations in the system. This basically means the same matrix elements may be updated multiple times during backpropagation from varied gradients. The same set of elements will facilitate transformations at more than one layer instead of those from a single layer as conventional. This is usually done in architectures like Siamese that tend to have parallel trunks trained simultaneously. In that case, using shared weights in a few layers( usually the bottom layers) helps the model converge better. This behavior, as observed, can be attributed to more diverse feature representations learned by the system. Since neurons corresponding to the same features are triggered in varied scenarios. Helps to model to generalize better.
+
+Note that sometimes the parameter sharing assumption may not make sense. This is especially the case when the input images to a ConvNet have some specific centered structure, where we should expect, for example, that completely different features should be learned on one side of the image than another. 
+
+One practical example is when the input is faces that have been centered in the image. You might expect that different eye-specific or hair-specific features could (and should) be learned in different spatial locations. In that case, it is common to relax the parameter sharing scheme, and instead, simply call the layer a Locally-Connected Layer.
+
+---
+
+In a typical CNN architecture, a few convolutional layers are connected in a cascade style. Each convolutional layer is followed by a Rectified Linear Unit (ReLU) layer or other activation function, then a pooling layer*, then one or more convolutional layers (+ReLU), then another pooling layer.
+
+The output from each convolution layer is a set of objects called feature maps, generated by a single kernel filter. The feature maps are used to define a new input to the next layer. A common trend is to keep on increasing the number of filters as the size of the image keeps dropping as it passes through the Convolutional and Pooling layers. The size of each kernel filter is usually 3×3 kernel because it can extract the same features which extract from large kernels and faster than them.
+
+After that, the final small image with a large number of filters(which is a 3D output from the above layers) is flattened and passed through fully connected layers. At last, we use a softmax layer with the required number of nodes for classification or use the output of the fully connected layers for some other purpose depending on the task.
+
+The number of these layers can increase depending on the complexity of the data and when they increase you need more data. Stride, Padding, Filter size, Type of Pooling, etc all are Hyperparameters and need to be chosen (maybe based on some previously built successful models)
+
+*Pooling: it is a way to reduce the number of features by choosing a number to represent its neighbor. And it has many types max-pooling, average pooling, and global average.
+
+* Max pooling: it takes the max number of window 2×2 as an example and represents this window by using the max number in it then slides on the image to make the same operation.
+* Average pooling: it is the same as max-pooling but takes the average of the window.
+
+---
+
+The vanishing gradient problem is encountered in artificial neural networks with gradient-based learning methods and backpropagation. In these learning methods, each of the weights of the neural network receives an update proportional to the partial derivative of the error function with respect to the current weight in each iteration of training. Sometimes when gradients become vanishingly small, this prevents the weight to change value.
+
+When the neural network has many hidden layers, the gradients in the earlier layers will become very low as we multiply the derivatives of each layer. As a result, learning in the earlier layers becomes very slow. 𝐓𝐡𝐢𝐬 𝐜𝐚𝐧 𝐜𝐚𝐮𝐬𝐞 𝐭𝐡𝐞 𝐧𝐞𝐮𝐫𝐚𝐥 𝐧𝐞𝐭𝐰𝐨𝐫𝐤 𝐭𝐨 𝐬𝐭𝐨𝐩 𝐥𝐞𝐚𝐫𝐧𝐢𝐧𝐠. This problem of vanishing gradient descent happens when training neural networks with many layers because the gradient diminishes dramatically as it propagates backward through the network.
+
+Some ways to fix it are:
+1. Use skip/residual connections.
+2. Using ReLU or Leaky ReLU over sigmoid and tanh activation functions.
+3. Use models that help propagate gradients to earlier time steps like in GRUs and LSTMs.
+
+---
+
+Some of the reasons why the loss doesn't decrease after a few Epochs are:
+
+a) The model is under-fitting the training data.
+
+b) The learning rate of the model is large.
+
+c) The initialization is not proper (like all the weights initialized with 0 doesn't make the network learn any function)
+
+d) The Regularisation hyper-parameter is quite large.
+
+e).  The classic case of vanishing gradients
+
+---
+
