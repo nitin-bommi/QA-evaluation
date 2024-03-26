@@ -41,29 +41,6 @@ It solves the problem of vanishing gradient on both sides by returning a value â
 
 ---
 
-To reduce overfitting in a deep neural network changes can be made in three places/stages: The input data to the network, the network architecture, and the training process:
-
-1. The input data to the network:
-
-* Check if all the features are available and reliable
-* Check if the training sample distribution is the same as the validation and test set distribution. Because if there is a difference in validation set distribution then it is hard for the model to predict as these complex patterns are unknown to the model.
-* Check for train / valid data contamination (or leakage)
-* The dataset size is enough, if not try data augmentation to increase the data size
-* The dataset is balanced
-
-2. Network architecture:
-* Overfitting could be due to model complexity. Question each component:
-  * can fully connect layers be replaced with convolutional + pooling layers?
-  * what is the justification for the number of layers and number of neurons chosen? Given how hard it is to tune these, can a pre-trained model be used?
-  * Add regularization - lasso (l1), ridge (l2), elastic net (both)
-* Add dropouts
-* Add batch normalization
-
-3. The training process:
-* Improvements in validation losses should decide when to stop training. Use callbacks for early stopping when there are no significant changes in the validation loss and restore_best_weights.
-
----
-
 Batch normalization is a technique for training very deep neural networks that standardizes the inputs to a layer for each mini-batch.
 
 Usually, a dataset is fed into the network in the form of batches where the distribution of the data differs for every batch size. By doing this, there might be chances of vanishing gradient or exploding gradient when it tries to backpropagate. In order to combat these issues, we can use BN (with irreducible error) layer mostly on the inputs to the layer before the activation function in the previous layer and after fully connected layers.
@@ -77,6 +54,8 @@ Batch Normalisation has the following effects on the Neural Network:
 4. Centred and Controlled values of Activation.
 5. Tries to Prevent exploding/vanishing gradient.
 6. Faster Training/Convergence to the minimum loss function
+
+---
 
 By taking incremental steps towards the minimal value, the gradient descent algorithm aims to minimize the error. The weights and biases in a neural network are updated using these processes. However, at times, the steps grow excessively large, resulting in increased updates to weights and bias terms to the point where the weights overflow (or become NaN, that is, Not a Number). An exploding gradient is the result of this, and it is an unstable method.
 
@@ -156,20 +135,6 @@ Some ways to fix it are:
 1. Use skip/residual connections.
 2. Using ReLU or Leaky ReLU over sigmoid and tanh activation functions.
 3. Use models that help propagate gradients to earlier time steps like in GRUs and LSTMs.
-
----
-
-Some of the reasons why the loss doesn't decrease after a few Epochs are:
-
-a) The model is under-fitting the training data.
-
-b) The learning rate of the model is large.
-
-c) The initialization is not proper (like all the weights initialized with 0 doesn't make the network learn any function)
-
-d) The Regularisation hyper-parameter is quite large.
-
-e).  The classic case of vanishing gradients
 
 ---
 
