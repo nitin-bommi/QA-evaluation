@@ -135,6 +135,3 @@ Some ways to fix it are:
 1. Use skip/residual connections.
 2. Using ReLU or Leaky ReLU over sigmoid and tanh activation functions.
 3. Use models that help propagate gradients to earlier time steps like in GRUs and LSTMs.
-
----
-
