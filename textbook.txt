@@ -11,94 +11,17 @@ Usually, both the encoder and the decoder are defined as multilayer perceptrons.
 
 Eϕ(x)=σ(Wx+b){\displaystyle E_{\phi }(\mathbf {x} )=\sigma (Wx+b)}where σ{\displaystyle \sigma } is an element-wise activation function such as a sigmoid function or a rectified linear unit, W{\displaystyle W} is a matrix called "weight", and b{\displaystyle b} is a vector called "bias".
 
-
-=== Training an autoencoder ===
-An autoencoder, by itself, is simply a tuple of two functions. To judge its quality, we need a task. A task is defined by a reference probability distribution μref{\displaystyle \mu _{ref}} over X{\displaystyle {\mathcal {X}}}, and a "reconstruction quality" function d:X×X→[0,∞]{\displaystyle d:{\mathcal {X}}\times {\mathcal {X}}\to [0,\infty ]}, such that d(x,x′){\displaystyle d(x,x')} measures how much x′{\displaystyle x'} differs from x{\displaystyle x}.
-With those, we can define the loss function for the autoencoder asThe optimal autoencoder for the given task (μref,d){\displaystyle (\mu _{ref},d)} is then arg⁡minθ,ϕL(θ,ϕ){\displaystyle \arg \min _{\theta ,\phi }L(\theta ,\phi )}. The search for the optimal autoencoder can be accomplished by any mathematical optimization technique, but usually by gradient descent. This search process is referred to as "training the autoencoder".
-In most situations, the reference distribution is just the empirical distribution given by a dataset {x1,...,xN}⊂X{\displaystyle \{x_{1},...,x_{N}\}\subset {\mathcal {X}}}, so that
-where and δxi{\displaystyle \delta _{x_{i}}} is the Dirac measure, and the quality function is just L2 loss: d(x,x′)=‖x−x′‖22{\displaystyle d(x,x')=\|x-x'\|_{2}^{2}}, ‖⋅‖2{\displaystyle \|\cdot \|_{2}} is the Euclidean norm. Then the problem of searching for the optimal autoencoder is just a least-squares optimization:
-
-
-=== Interpretation ===
-An autoencoder has two main parts: an encoder that maps the message to a code, and a decoder that reconstructs the message from the code. An optimal autoencoder would perform as close to perfect reconstruction as possible, with "close to perfect" defined by the reconstruction quality function d{\displaystyle d}.
-The simplest way to perform the copying task perfectly would be to duplicate the signal. To suppress this behavior, the code space Z{\displaystyle {\mathcal {Z}}} usually has fewer dimensions than the message space X{\displaystyle {\mathcal {X}}}.
-Such an autoencoder is called undercomplete. It can be interpreted as compressing the message, or reducing its dimensionality.At the limit of an ideal undercomplete autoencoder, every possible code z{\displaystyle z} in the code space is used to encode a message x{\displaystyle x} that really appears in the distribution μref{\displaystyle \mu _{ref}}, and the decoder is also perfect: Dθ(Eϕ(x))=x{\displaystyle D_{\theta }(E_{\phi }(x))=x}. This ideal autoencoder can then be used to generate messages indistinguishable from real messages, by feeding its decoder arbitrary code z{\displaystyle z} and obtaining Dθ(z){\displaystyle D_{\theta }(z)}, which is a message that really appears in the distribution μref{\displaystyle \mu _{ref}}.
-If the code space Z{\displaystyle {\mathcal {Z}}} has dimension larger than (overcomplete), or equal to, the message space X{\displaystyle {\mathcal {X}}}, or the hidden units are given enough capacity, an autoencoder can learn the identity function and become useless. However, experimental results found that overcomplete autoencoders might still learn useful features.In the ideal setting, the code dimension and the model capacity could be set on the basis of the complexity of the data distribution to be modeled. A standard way to do so is to add modifications to the basic autoencoder, to be detailed below.
-
-
-== History ==
-The autoencoder was first proposed as a nonlinear generalization of principal components analysis (PCA) by Kramer. The autoencoder has also been called the autoassociator, or Diabolo network. Its first applications date to early 1990s. Their most traditional application was dimensionality reduction or feature learning, but the concept became widely used for learning generative models of data. Some of the most powerful AIs in the 2010s involved autoencoders stacked inside deep neural networks.
-
-
-== Variations ==
-
-
 === Regularized autoencoders ===
 Various techniques exist to prevent autoencoders from learning the identity function and to improve their ability to capture important information and learn richer representations.
-
-
-==== Sparse autoencoder (SAE) ====
-Inspired by the sparse coding hypothesis in neuroscience, sparse autoencoders are variants of autoencoders, such that the codes Eϕ(x){\displaystyle E_{\phi }(x)} for messages tend to be sparse codes, that is, Eϕ(x){\displaystyle E_{\phi }(x)} is close to zero in most entries. Sparse autoencoders may include more (rather than fewer) hidden units than inputs, but only a small number of the hidden units are allowed to be active at the same time. Encouraging sparsity improves performance on classification tasks. There are two main ways to enforce sparsity. One way is to simply clamp all but the highest-k activations of the latent code to zero. This is the k-sparse autoencoder.The k-sparse autoencoder inserts the following "k-sparse function" in the latent layer of a standard autoencoder:where bi=1{\displaystyle b_{i}=1} if |xi|{\displaystyle |x_{i}|} ranks in the top k, and 0 otherwise.
-Backpropagating through fk{\displaystyle f_{k}} is simple: set gradient to 0 for bi=0{\displaystyle b_{i}=0} entries, and keep gradient for bi=1{\displaystyle b_{i}=1} entries. This is essentially a generalized ReLU function.The other way is a relaxed version of the k-sparse autoencoder. Instead of forcing sparsity, we add a sparsity regularization loss, then optimize forwhere λ>0{\displaystyle \lambda >0} measures how much sparsity we want to enforce.Let the autoencoder architecture have K{\displaystyle K} layers. To define a sparsity regularization loss, we need a "desired" sparsity ρ^k{\displaystyle {\hat {\rho }}_{k}} for each layer, a weight wk{\displaystyle w_{k}} for how much to enforce each sparsity, and a function s:[0,1]×[0,1]→[0,∞]{\displaystyle s:[0,1]\times [0,1]\to [0,\infty ]} to measure how much two sparsities differ.
-For each input x{\displaystyle x}, let the actual sparsity of activation in each layer k{\displaystyle k} bewhere ak,i(x){\displaystyle a_{k,i}(x)} is the activation in the i{\displaystyle i} -th neuron of the k{\displaystyle k} -th layer upon input x{\displaystyle x}.
-The sparsity loss upon input x{\displaystyle x} for one layer is s(ρ^k,ρk(x)){\displaystyle s({\hat {\rho }}_{k},\rho _{k}(x))}, and the sparsity regularization loss for the entire autoencoder is the expected weighted sum of sparsity losses:Typically, the function s{\displaystyle s} is either the Kullback-Leibler (KL) divergence, ass(ρ,ρ^)=KL(ρ||ρ^)=ρlog⁡ρρ^+(1−ρ)log⁡1−ρ1−ρ^{\displaystyle s(\rho ,{\hat {\rho }})=KL(\rho ||{\hat {\rho }})=\rho \log {\frac {\rho }{\hat {\rho }}}+(1-\rho )\log {\frac {1-\rho }{1-{\hat {\rho }}}}}or the L1 loss, as s(ρ,ρ^)=|ρ−ρ^|{\displaystyle s(\rho ,{\hat {\rho }})=|\rho -{\hat {\rho }}|}, or the L2 loss, as s(ρ,ρ^)=|ρ−ρ^|2{\displaystyle s(\rho ,{\hat {\rho }})=|\rho -{\hat {\rho }}|^{2}}.
-Alternatively, the sparsity regularization loss may be defined without reference to any "desired sparsity", but simply force as much sparsity as possible. In this case, one can define the sparsity regularization loss as where hk{\displaystyle h_{k}} is the activation vector in the k{\displaystyle k}-th layer of the autoencoder. The norm ‖⋅‖{\displaystyle \|\cdot \|} is usually the L1 norm (giving the L1 sparse autoencoder) or the L2 norm (giving the L2 sparse autoencoder).
-
-
-==== Denoising autoencoder (DAE) ====
-Denoising autoencoders (DAE) try to achieve a good representation by changing the reconstruction criterion.A DAE, originally called a "robust autoassociative network", is trained by intentionally corrupting the inputs of a standard autoencoder during training. A noise process is defined by a probability distribution μT{\displaystyle \mu _{T}} over functions T:X→X{\displaystyle T:{\mathcal {X}}\to {\mathcal {X}}}. That is, the function T{\displaystyle T} takes a message x∈X{\displaystyle x\in {\mathcal {X}}}, and corrupts it to a noisy version T(x){\displaystyle T(x)}. The function T{\displaystyle T} is selected randomly, with a probability distribution μT{\displaystyle \mu _{T}}.
-Given a task (μref,d){\displaystyle (\mu _{ref},d)}, the problem of training a DAE is the optimization problem:That is, the optimal DAE should take any noisy message and attempt to recover the original message without noise, thus the name "denoising".
-Usually, the noise process T{\displaystyle T} is applied only during training and testing, not during downstream use.
-The use of DAE depends on two assumptions:
-
-There exist representations to the messages that are relatively stable and robust to the type of noise we are likely to encounter;
-The said representations capture structures in the input distribution that are useful for our purposes.Example noise processes include:
-
-additive isotropic Gaussian noise,
-masking noise (a fraction of the input is randomly chosen and set to 0)
-salt-and-pepper noise (a fraction of the input is randomly chosen and randomly set to its minimum or maximum value).
-
-
-==== Contractive autoencoder (CAE) ====
-A contractive autoencoder adds the contractive regularization loss to the standard autoencoder loss:where λ>0{\displaystyle \lambda >0} measures how much contractive-ness we want to enforce. The contractive regularization loss itself is defined as the expected Frobenius norm of the Jacobian matrix of the encoder activations with respect to the input:To understand what Lcontractive{\displaystyle L_{contractive}} measures, note the factfor any message x∈X{\displaystyle x\in {\mathcal {X}}}, and small variation δx{\displaystyle \delta x} in it. Thus, if ‖∇xEϕ(x)‖F2{\displaystyle \|\nabla _{x}E_{\phi }(x)\|_{F}^{2}} is small, it means that a small neighborhood of the message maps to a small neighborhood of its code. This is a desired property, as it means small variation in the message leads to small, perhaps even zero, variation in its code, like how two pictures may look the same even if they are not exactly the same.
-The DAE can be understood as an infinitesimal limit of CAE: in the limit of small Gaussian input noise, DAEs make the reconstruction function resist small but finite-sized input perturbations, while CAEs make the extracted features resist infinitesimal input perturbations.
-
-
-==== Minimal description length autoencoder ====
-
-
-=== Concrete autoencoder ===
-The concrete autoencoder is designed for discrete feature selection. A concrete autoencoder forces the latent space to consist only of a user-specified number of features. The concrete autoencoder uses a continuous relaxation of the categorical distribution to allow gradients to pass through the feature selector layer, which makes it possible to use standard backpropagation to learn an optimal subset of input features that minimize reconstruction loss.
-
-
-=== Variational autoencoder (VAE) ===
-
-Variational autoencoders (VAEs) belong to the families of variational Bayesian methods. Despite the architectural similarities with basic autoencoders, VAEs are architecture with different goals and with a completely different mathematical formulation. The latent space is in this case composed by a mixture of distributions instead of a fixed vector.
-Given an input dataset x{\displaystyle x} characterized by an unknown probability function P(x){\displaystyle P(x)} and a multivariate latent encoding vector z{\displaystyle z}, the objective is to model the data as a distribution pθ(x){\displaystyle p_{\theta }(x)}, with θ{\displaystyle \theta } defined as the set of the network parameters so that pθ(x)=∫zpθ(x,z)dz{\displaystyle p_{\theta }(x)=\int _{z}p_{\theta }(x,z)dz}.
-
-
-== Advantages of depth ==
-Autoencoders are often trained with a single-layer encoder and a single-layer decoder, but using many-layered (deep) encoders and decoders offers many advantages.
-Depth can exponentially reduce the computational cost of representing some functions.
-Depth can exponentially decrease the amount of training data needed to learn some functions.
-Experimentally, deep autoencoders yield better compression compared to shallow or linear autoencoders.
-
-
-=== Training ===
-Geoffrey Hinton developed the deep belief network technique for training many-layered deep autoencoders. His method involves treating each neighboring set of two layers as a restricted Boltzmann machine so that pretraining approximates a good solution, then using backpropagation to fine-tune the results.Researchers have debated whether joint training (i.e. training the whole architecture together with a single global reconstruction objective to optimize) would be better for deep auto-encoders. A 2015 study showed that joint training learns better data models along with more representative features for classification as compared to the layerwise method. However, their experiments showed that the success of joint training depends heavily on the regularization strategies adopted.
-
 
 == Applications ==
 The two main applications of autoencoders are dimensionality reduction and information retrieval, but modern variations have been applied to other tasks.
 
-
 === Dimensionality reduction ===
 Dimensionality reduction was one of the first deep learning applications.For Hinton's 2006 study, he pretrained a multi-layer autoencoder with a stack of RBMs and then used their weights to initialize a deep autoencoder with gradually smaller hidden layers until hitting a bottleneck of 30 neurons. The resulting 30 dimensions of the code yielded a smaller reconstruction error compared to the first 30 components of a principal component analysis (PCA), and learned a representation that was qualitatively easier to interpret, clearly separating data clusters.Representing dimensions can improve performance on tasks such as classification. Indeed, the hallmark of dimensionality reduction is to place semantically related examples near each other.
 
-
 ==== Principal component analysis ====
 If linear activations are used, or only a single sigmoid hidden layer, then the optimal solution to an autoencoder is strongly related to principal component analysis (PCA). The weights of an autoencoder with a single hidden layer of size p{\displaystyle p} (where p{\displaystyle p} is less than the size of the input) span the same vector subspace as the one spanned by the first p{\displaystyle p} principal components, and the output of the autoencoder is an orthogonal projection onto this subspace. The autoencoder weights are not equal to the principal components, and are generally not orthogonal, yet the principal components may be recovered from them using the singular value decomposition.However, the potential of autoencoders resides in their non-linearity, allowing the model to learn more powerful generalizations compared to PCA, and to reconstruct the input with significantly lower information loss.
-
 
 === Information retrieval and Search engine optimization ===
 Information retrieval benefits particularly from dimensionality reduction in that search can become more efficient in certain kinds of low dimensional spaces. Autoencoders were indeed applied to semantic hashing, proposed by Salakhutdinov and Hinton in 2007. By training the algorithm to produce a low-dimensional binary code, all database entries could be stored in a hash table mapping binary code vectors to entries. This table would then support information retrieval by returning all entries with the same binary code as the query, or slightly less similar entries by flipping some bits from the query encoding.
@@ -118,34 +41,23 @@ Keyword Detection: Autoencoders can be trained to identify keywords and importan
 
 Semantic Search: By using autoencoder techniques, semantic representation models of content can be created. These models can be used to enhance search engines' understanding of the themes covered in web pages.In essence, the encoder-decoder architecture or autoencoders can be leveraged in SEO to optimize web page content, improve their indexing, and enhance their appeal to both search engines and users.
 
-
 === Anomaly detection ===
 Another application for autoencoders is anomaly detection. By learning to replicate the most salient features in the training data under some of the constraints described previously, the model is encouraged to learn to precisely reproduce the most frequently observed characteristics. When facing anomalies, the model should worsen its reconstruction performance. In most cases, only data with normal instances are used to train the autoencoder; in others, the frequency of anomalies is small compared to the observation set so that its contribution to the learned representation could be ignored. After training, the autoencoder will accurately reconstruct "normal" data, while failing to do so with unfamiliar anomalous data. Reconstruction error (the error between the original data and its low dimensional reconstruction) is used as an anomaly score to detect anomalies.Recent literature has however shown that certain autoencoding models can, counterintuitively, be very good at reconstructing anomalous examples and consequently not able to reliably perform anomaly detection.
-
 
 === Image processing ===
 The characteristics of autoencoders are useful in image processing.
 One example can be found in lossy image compression, where autoencoders outperformed other approaches and proved competitive against JPEG 2000.Another useful application of autoencoders in image preprocessing is image denoising.Autoencoders found use in more demanding contexts such as medical imaging where they have been used for image denoising as well as super-resolution. In image-assisted diagnosis, experiments have applied autoencoders for breast cancer detection and for modelling the relation between the cognitive decline of Alzheimer's disease and the latent features of an autoencoder trained with MRI.
 
-
 === Drug discovery ===
 In 2019 molecules generated with variational autoencoders were validated experimentally in mice.
-
 
 === Popularity prediction ===
 Recently, a stacked autoencoder framework produced promising results in predicting popularity of social media posts, which is helpful for online advertising strategies.
 
-
 === Machine translation ===
 Autoencoders have been applied to machine translation, which is usually referred to as neural machine translation (NMT). Unlike traditional autoencoders, the output does not match the input - it is in another language. In NMT, texts are treated as sequences to be encoded into the learning procedure, while on the decoder side sequences in the target language(s) are generated. Language-specific autoencoders incorporate further linguistic features into the learning procedure, such as Chinese decomposition features. Machine translation is rarely still done with autoencoders, due to the availability of more effective transformer networks.
 
-
-
-Representation learning
-Sparse dictionary learning
-Deep learning
-
-
+--------------------------------------------------------------------------
 
 The activation function of a node in an artificial neural network is a function that calculates the output of the node based on its individual inputs and their weights. Nontrivial problems can be solved using only a few nodes if the activation function is nonlinear. Modern activation functions include the smooth version of the ReLU, the GELU, which was used in the 2018 BERT model, the logistic (sigmoid) function used in the 2012 speech recognition model developed by Hinton et al, the ReLU used in the 2012 AlexNet computer vision model and in the 2015 ResNet model. 
 
@@ -161,57 +73,7 @@ Continuously differentiable
 This property is desirable (ReLU is not continuously differentiable and has some issues with gradient-based optimization, but it is still possible) for enabling gradient-based optimization methods. The binary step activation function is not differentiable at 0, and it differentiates to 0 for all other values, so gradient-based methods can make no progress with it.These properties do not decisively influence performance, nor are they the only mathematical properties that may be useful. For instance, the strictly positive range of the softplus makes it suitable for predicting variances in variational autoencoders.
 
 
-== Mathematical details ==
-The most common activation functions can be divided into three categories: ridge functions, radial functions and fold functions.
-An activation function f{\displaystyle f} is saturating if lim|v|→∞|∇f(v)|=0{\displaystyle \lim _{|v|\to \infty }|\nabla f(v)|=0}. It is nonsaturating if it is not saturating. Non-saturating activation functions, such as ReLU, may be better than saturating activation functions, as networks using are less likely to suffer from the vanishing gradient problem.
-
-
-=== Ridge activation functions ===
-
-Ridge functions are multivariate functions acting on a linear combination of the input variables. Often used examples include:
-Linear activation: ϕ(v)=a+v′b{\displaystyle \phi (\mathbf {v} )=a+\mathbf {v} '\mathbf {b} },
-ReLU activation: ϕ(v)=max(0,a+v′b){\displaystyle \phi (\mathbf {v} )=\max(0,a+\mathbf {v} '\mathbf {b} )},
-Heaviside activation: ϕ(v)=1a+v′b>0{\displaystyle \phi (\mathbf {v} )=1_{a+\mathbf {v} '\mathbf {b} >0}},
-Logistic activation: ϕ(v)=(1+exp⁡(−a−v′b))−1{\displaystyle \phi (\mathbf {v} )=(1+\exp(-a-\mathbf {v} '\mathbf {b} ))^{-1}}.In biologically inspired neural networks, the activation function is usually an abstraction representing the rate of action potential firing in the cell. In its simplest form, this function is binary—that is, either the neuron is firing or not. Neurons also cannot fire faster than a certain rate, motivating sigmoid activation functions whose range is a finite interval. 
-The function looks like ϕ(v)=U(a+v′b){\displaystyle \phi (\mathbf {v} )=U(a+\mathbf {v} '\mathbf {b} )}, where U{\displaystyle U} is the Heaviside step function. 
-If a line has a positive slope, on the other hand, it may reflect the increase in firing rate that occurs as input current increases. Such a function would be of the form ϕ(v)=a+v′b{\displaystyle \phi (\mathbf {v} )=a+\mathbf {v} '\mathbf {b} }.
-
-
-=== Radial activation functions ===
-
-A special class of activation functions known as radial basis functions (RBFs) are used in RBF networks, which are extremely efficient as universal function approximators. These activation functions can take many forms, but they are usually found as one of the following functions:
-
-Gaussian: ϕ(v)=exp⁡(−‖v−c‖22σ2){\displaystyle \,\phi (\mathbf {v} )=\exp \left(-{\frac {\|\mathbf {v} -\mathbf {c} \|^{2}}{2\sigma ^{2}}}\right)}
-Multiquadratics: ϕ(v)=‖v−c‖2+a2{\displaystyle \,\phi (\mathbf {v} )={\sqrt {\|\mathbf {v} -\mathbf {c} \|^{2}+a^{2}}}}
-Inverse multiquadratics: ϕ(v)=(‖v−c‖2+a2)−12{\displaystyle \,\phi (\mathbf {v} )=\left(\|\mathbf {v} -\mathbf {c} \|^{2}+a^{2}\right)^{-{\frac {1}{2}}}}
-Polyharmonic splineswhere c{\displaystyle \mathbf {c} } is the vector representing the function center and a{\displaystyle a} and σ{\displaystyle \sigma } are parameters affecting the spread of the radius.
-
-
-=== Folding activation functions ===
-
-Folding activation functions are extensively used in the pooling layers in convolutional neural networks, and in output layers of multiclass classification networks. These activations perform aggregation over the inputs, such as taking the mean, minimum or maximum. In multiclass classification the softmax activation is often used.
-
-
-=== Table of activation functions ===
-The following table compares the properties of several activation functions that are functions of one fold x from the previous layer or layers:
-
-The following table lists activation functions that are not functions of a single fold x from the previous layer or layers:
-
-^  Here, δij{\displaystyle \delta _{ij}} is the Kronecker delta.
-^  For instance, j{\displaystyle j} could be iterating through the number of kernels of the previous neural network layer while i{\displaystyle i} iterates through the number of kernels of the current layer.
-
-
-=== Quantum activation functions ===
-
-In quantum neural networks programmed on gate-model quantum computers, based on quantum perceptrons instead of variational quantum circuits, the non-linearity of the activation function can be implemented with no need of measuring the output of each perceptron at each layer. The quantum properties loaded within the circuit such as superposition can be preserved by creating the Taylor series of the argument computed by the perceptron itself, with suitable quantum circuits computing the powers up to a wanted approximation degree. Because of the flexibility of such quantum circuits, they can be designed in order to approximate any arbitrary classical activation function.
-
-
-
-Logistic function
-Rectifier (neural networks)
-Stability (learning theory)
-Softmax function
-
+--------------------------------------------------------------------------
 
 
 Batch normalization (also known as batch norm) is a method used to make training of artificial neural networks faster and more stable through normalization of the layers' inputs by re-centering and re-scaling. It was proposed by Sergey Ioffe and Christian Szegedy in 2015.While the effect of batch normalization is evident, the reasons behind its effectiveness remain under discussion. It was believed that it can mitigate the problem of internal covariate shift, where parameter initialization and changes in the distribution of the inputs of each layer affect the learning rate of the network. Recently, some scholars have argued that batch normalization does not reduce internal covariate shift, but rather smooths the objective function, which in turn improves the performance. However, at initialization, batch normalization in fact induces severe gradient explosion in deep networks, which is only alleviated by skip connections in residual networks. Others maintain that batch normalization achieves length-direction decoupling, and thereby accelerates neural networks.
@@ -222,30 +84,6 @@ Each layer of a neural network has inputs with a corresponding distribution, whi
 Batch normalization was initially proposed to mitigate internal covariate shift. During the training stage of networks, as the parameters of the preceding layers change, the distribution of inputs to the current layer changes accordingly, such that the current layer needs to constantly readjust to new distributions. This problem is especially severe for deep networks, because small changes in shallower hidden layers will be amplified as they propagate within the network, resulting in significant shift in deeper hidden layers. Therefore, the method of batch normalization is proposed to reduce these unwanted shifts to speed up training and to produce more reliable models.
 Besides reducing internal covariate shift, batch normalization is believed to introduce many other benefits. With this additional operation, the network can use higher learning rate without vanishing or exploding gradients. Furthermore, batch normalization seems to have a regularizing effect such that the network improves its generalization properties, and it is thus unnecessary to use dropout to mitigate overfitting. It has also been observed that the network becomes more robust to different initialization schemes and learning rates while using batch normalization.
 
-
-== Procedures ==
-
-
-=== Transformation ===
-In a neural network, batch normalization is achieved through a normalization step that fixes the means and variances of each layer's inputs. Ideally, the normalization would be conducted over the entire training set, but to use this step jointly with stochastic optimization methods, it is impractical to use the global information. Thus, normalization is restrained to each mini-batch in the training process.
-Let us use B to denote a mini-batch of size m of the entire training set. The empirical mean and variance of B could thus be denoted as
-μB=1m∑i=1mxi{\displaystyle \mu _{B}={\frac {1}{m}}\sum _{i=1}^{m}x_{i}} and σB2=1m∑i=1m(xi−μB)2{\displaystyle \sigma _{B}^{2}={\frac {1}{m}}\sum _{i=1}^{m}(x_{i}-\mu _{B})^{2}}.
-For a layer of the network with d-dimensional input, x=(x(1),...,x(d)){\displaystyle x=(x^{(1)},...,x^{(d)})}, each dimension of its input is then normalized (i.e. re-centered and re-scaled) separately,
-x^i(k)=xi(k)−μB(k)(σB(k))2+ϵ{\displaystyle {\hat {x}}_{i}^{(k)}={\frac {x_{i}^{(k)}-\mu _{B}^{(k)}}{\sqrt {\left(\sigma _{B}^{(k)}\right)^{2}+\epsilon }}}}, where k∈[1,d]{\displaystyle k\in [1,d]} and  i∈[1,m]{\displaystyle i\in [1,m]}; μB(k){\displaystyle \mu _{B}^{(k)}} and σB(k){\displaystyle \sigma _{B}^{(k)}} are the per-dimension mean and standard deviation, respectively.
-ϵ{\displaystyle \epsilon } is added in the denominator for numerical stability and is an arbitrarily small constant. The resulting normalized activation x^(k){\displaystyle {\hat {x}}^{(k)}}have zero mean and unit variance, if ϵ{\displaystyle \epsilon } is not taken into account. To restore the representation power of the network, a transformation step then follows as
-yi(k)=γ(k)x^i(k)+β(k){\displaystyle y_{i}^{(k)}=\gamma ^{(k)}{\hat {x}}_{i}^{(k)}+\beta ^{(k)}},
-where the parameters γ(k){\displaystyle \gamma ^{(k)}} and β(k){\displaystyle \beta ^{(k)}} are subsequently learned in the optimization process.
-Formally, the operation that implements batch normalization is a transform BNγ(k),β(k):x1...m(k)→y1...m(k){\displaystyle BN_{\gamma ^{(k)},\beta ^{(k)}}:x_{1...m}^{(k)}\rightarrow y_{1...m}^{(k)}} called the Batch Normalizing transform. The output of the BN transform y(k)=BNγ(k),β(k)(x(k)){\displaystyle y^{(k)}=BN_{\gamma ^{(k)},\beta ^{(k)}}(x^{(k)})} is then passed to other network layers, while the normalized output  x^i(k){\displaystyle {\hat {x}}_{i}^{(k)}} remains internal to the current layer.
-
-
-=== Backpropagation ===
-The described BN transform is a differentiable operation, and the gradient of the loss l  with respect to the different parameters can be computed directly with the chain rule.
-Specifically, ∂l∂yi(k){\displaystyle {\frac {\partial l}{\partial y_{i}^{(k)}}}} depends on the choice of activation function, and the gradient against other parameters could be expressed as a function of ∂l∂yi(k){\displaystyle {\frac {\partial l}{\partial y_{i}^{(k)}}}}:
-∂l∂x^i(k)=∂l∂yi(k)γ(k){\displaystyle {\frac {\partial l}{\partial {\hat {x}}_{i}^{(k)}}}={\frac {\partial l}{\partial y_{i}^{(k)}}}\gamma ^{(k)}},
-∂l∂γ(k)=∑i=1m∂l∂yi(k)x^i(k){\displaystyle {\frac {\partial l}{\partial \gamma ^{(k)}}}=\sum _{i=1}^{m}{\frac {\partial l}{\partial y_{i}^{(k)}}}{\hat {x}}_{i}^{(k)}}, ∂l∂β(k)=∑i=1m∂l∂yi(k){\displaystyle {\frac {\partial l}{\partial \beta ^{(k)}}}=\sum _{i=1}^{m}{\frac {\partial l}{\partial y_{i}^{(k)}}}},∂l∂σB(k)2=∑i=1m∂l∂yi(k)(xi(k)−μB(k))(−γ(k)2(σB(k)2+ϵ)−3/2){\displaystyle {\frac {\partial l}{\partial \sigma _{B}^{(k)^{2}}}}=\sum _{i=1}^{m}{\frac {\partial l}{\partial y_{i}^{(k)}}}(x_{i}^{(k)}-\mu _{B}^{(k)})\left(-{\frac {\gamma ^{(k)}}{2}}(\sigma _{B}^{(k)^{2}}+\epsilon )^{-3/2}\right)}, ∂l∂μB(k)=∑i=1m∂l∂yi(k)−γ(k)σB(k)2+ϵ+∂l∂σB(k)21m∑i=1m(−2)⋅(xi(k)−μB(k)){\displaystyle {\frac {\partial l}{\partial \mu _{B}^{(k)}}}=\sum _{i=1}^{m}{\frac {\partial l}{\partial y_{i}^{(k)}}}{\frac {-\gamma ^{(k)}}{\sqrt {\sigma _{B}^{(k)^{2}}+\epsilon }}}+{\frac {\partial l}{\partial \sigma _{B}^{(k)^{2}}}}{\frac {1}{m}}\sum _{i=1}^{m}(-2)\cdot (x_{i}^{(k)}-\mu _{B}^{(k)})},
-and ∂l∂xi(k)=∂l∂x^i(k)1σB(k)2+ϵ+∂l∂σB(k)22(xi(k)−μB(k))m+∂l∂μB(k)1m{\displaystyle {\frac {\partial l}{\partial x_{i}^{(k)}}}={\frac {\partial l}{\partial {\hat {x}}_{i}^{(k)}}}{\frac {1}{\sqrt {\sigma _{B}^{(k)^{2}}+\epsilon }}}+{\frac {\partial l}{\partial \sigma _{B}^{(k)^{2}}}}{\frac {2(x_{i}^{(k)}-\mu _{B}^{(k)})}{m}}+{\frac {\partial l}{\partial \mu _{B}^{(k)}}}{\frac {1}{m}}}.
-
-
 === Inference ===
 During the training stage, the normalization steps depend on the mini-batches to ensure efficient and reliable training. However, in the inference stage, this dependence is not useful any more. Instead, the normalization step in this stage is computed with the population statistics such that the output could depend on the input in a deterministic manner. The population mean, E[x(k)]{\displaystyle E[x^{(k)}]}, and variance, Var⁡[x(k)]{\displaystyle \operatorname {Var} [x^{(k)}]}, are computed as:
 E[x(k)]=EB[μB(k)]{\displaystyle E[x^{(k)}]=E_{B}[\mu _{B}^{(k)}]}, and Var⁡[x(k)]=mm−1EB[(σB(k))2]{\displaystyle \operatorname {Var} [x^{(k)}]={\frac {m}{m-1}}E_{B}[\left(\sigma _{B}^{(k)}\right)^{2}]}.
@@ -254,32 +92,9 @@ The BN transform in the inference step thus becomes
 y(k)=BNγ(k),β(k)inf(x(k))=γ(k)x(k)−E[x(k)]Var⁡[x(k)]+ϵ+β(k){\displaystyle y^{(k)}=BN_{\gamma ^{(k)},\beta ^{(k)}}^{\text{inf}}(x^{(k)})=\gamma ^{(k)}{\frac {x^{(k)}-E[x^{(k)}]}{\sqrt {\operatorname {Var} [x^{(k)}]+\epsilon }}}+\beta ^{(k)}},
 where y(k){\displaystyle y^{(k)}} is passed on to future layers instead of x(k){\displaystyle x^{(k)}}. Since the parameters are fixed in this transformation, the batch normalization procedure is essentially applying a linear transform to the activation.
 
-
 == Theory ==
 Although batch normalization has become popular due to its strong empirical performance, the working mechanism of the method is not yet well-understood. The explanation made in the original paper was that batch norm works by reducing internal covariate shift, but this has been challenged by more recent work. One experiment trained a VGG-16 network under 3 different training regimes: standard (no batch norm), batch norm, and batch norm with noise added to each layer during training. In the third model, the noise has non-zero mean and non-unit variance, i.e. it explicitly introduces covariate shift. Despite this, it showed similar accuracy to the second model, and both performed better than the first, suggesting that covariate shift is not the reason that batch norm improves performance.
 Using batch normalization causes the items in a batch to no longer be iid, which can lead to difficulties in training due to lower quality gradient estimation.
-
-
-=== Smoothness ===
-One alternative explanation, is that the improvement with batch normalization is instead due to it producing a smoother parameter space and smoother gradients, as formalized by a smaller Lipschitz constant. 
-Consider two identical networks, one contains batch normalization layers and the other doesn't, the behaviors of these two networks are then compared. Denote the loss functions as L^{\displaystyle {\hat {L}}} and L{\displaystyle L}, respectively. Let the input to both networks be x{\displaystyle x}, and the output be y{\displaystyle y}, for which y=Wx{\displaystyle y=Wx}, where W{\displaystyle W} is the layer weights. For the second network, y{\displaystyle y} additionally goes through a batch normalization layer. Denote the normalized activation as y^{\displaystyle {\hat {y}}}, which has zero mean and unit variance. Let the transformed activation be z=γy^+β{\displaystyle z=\gamma {\hat {y}}+\beta }, and suppose γ{\displaystyle \gamma } and β{\displaystyle \beta } are constants. Finally, denote the standard deviation over a mini-batch yj^∈Rm{\displaystyle {\hat {y_{j}}}\in \mathbb {R} ^{m}} as σj{\displaystyle \sigma _{j}}.
-First, it can be shown that the gradient magnitude of a batch normalized network, ||▽yiL^||{\displaystyle ||\triangledown _{y_{i}}{\hat {L}}||}, is bounded, with the bound expressed as
-||▽yiL^||2≤γ2σj2(||▽yiL||2−1m⟨1,▽yiL⟩2−1m⟨▽yiL,y^j⟩2){\displaystyle ||\triangledown _{y_{i}}{\hat {L}}||^{2}\leq {\frac {\gamma ^{2}}{\sigma _{j}^{2}}}{\Bigg (}||\triangledown _{y_{i}}L||^{2}-{\frac {1}{m}}\langle 1,\triangledown _{y_{i}}L\rangle ^{2}-{\frac {1}{m}}\langle \triangledown _{y_{i}}L,{\hat {y}}_{j}\rangle ^{2}{\bigg )}}.
-Since the gradient magnitude represents the Lipschitzness of the loss, this relationship indicates that a batch normalized network could achieve greater Lipschitzness comparatively. Notice that the bound gets tighter when the gradient ▽yiL^{\displaystyle \triangledown _{y_{i}}{\hat {L}}} correlates with the activation yi^{\displaystyle {\hat {y_{i}}}}, which is a common phenomena. The scaling of γ2σj2{\displaystyle {\frac {\gamma ^{2}}{\sigma _{j}^{2}}}} is also significant, since the variance is often large.
-Secondly, the quadratic form of the loss Hessian with respect to activation in the gradient direction can be bounded as
-(▽yjL^)T∂L^∂yj∂yj(▽yjL^)≤γ2σ2(∂L^∂yj)T(∂L∂yj∂yj)(∂L^∂yj)−γmσ2⟨▽yjL,yj^⟩||∂L^∂yj||2{\displaystyle (\triangledown _{y_{j}}{\hat {L}})^{T}{\frac {\partial {\hat {L}}}{\partial y_{j}\partial y_{j}}}(\triangledown _{y_{j}}{\hat {L}})\leq {\frac {\gamma ^{2}}{\sigma ^{2}}}{\bigg (}{\frac {\partial {\hat {L}}}{\partial y_{j}}}{\bigg )}^{T}{\bigg (}{\frac {\partial L}{\partial y_{j}\partial y_{j}}}{\bigg )}{\bigg (}{\frac {\partial {\hat {L}}}{\partial y_{j}}}{\bigg )}-{\frac {\gamma }{m\sigma ^{2}}}\langle \triangledown _{y_{j}}L,{\hat {y_{j}}}\rangle {\bigg |}{\bigg |}{\frac {\partial {\hat {L}}}{\partial y_{j}}}{\bigg |}{\bigg |}^{2}}.
-The scaling of γ2σj2{\displaystyle {\frac {\gamma ^{2}}{\sigma _{j}^{2}}}} indicates that the loss Hessian is resilient to the mini-batch variance, whereas the second term on the right hand side suggests that it becomes smoother when the Hessian and the inner product are non-negative. If the loss is locally convex, then the Hessian is positive semi-definite, while the inner product is positive if gj^{\displaystyle {\hat {g_{j}}}} is in the direction towards the minimum of the loss. It could thus be concluded from this inequality that the gradient generally becomes more predictive with the batch normalization layer.
-It then follows to translate the bounds related to the loss with respect to the normalized activation to a bound on the loss with respect to the network weights:
-gj^≤γ2σj2(gj2−mμgj2−λ2⟨▽yjL,y^j⟩2){\displaystyle {\hat {g_{j}}}\leq {\frac {\gamma ^{2}}{\sigma _{j}^{2}}}(g_{j}^{2}-m\mu _{g_{j}}^{2}-\lambda ^{2}\langle \triangledown _{y_{j}}L,{\hat {y}}_{j}\rangle ^{2})}, where gj=max||X||≤λ||▽WL||2{\displaystyle g_{j}=max_{||X||\leq \lambda }||\triangledown _{W}L||^{2}} and g^j=max||X||≤λ||▽WL^||2{\displaystyle {\hat {g}}_{j}=max_{||X||\leq \lambda }||\triangledown _{W}{\hat {L}}||^{2}}.
-In addition to the smoother landscape, it is further shown that batch normalization could result in a better initialization with the following inequality:
-||W0−W^∗||2≤||W0−W∗||2−1||W∗||2(||W∗||2−⟨W∗,W0⟩)2{\displaystyle ||W_{0}-{\hat {W}}^{*}||^{2}\leq ||W_{0}-W^{*}||^{2}-{\frac {1}{||W^{*}||^{2}}}(||W^{*}||^{2}-\langle W^{*},W_{0}\rangle )^{2}}, where W∗{\displaystyle W^{*}} and W^∗{\displaystyle {\hat {W}}^{*}} are the local optimal weights for the two networks, respectively.
-Some scholars argue that the above analysis cannot fully capture the performance of batch normalization, because the proof only concerns the largest eigenvalue, or equivalently, one direction in the landscape at all points. It is suggested that the complete eigenspectrum needs to be taken into account to make a conclusive analysis.
-
-
-=== Measure ===
-Since it is hypothesized that batch normalization layers could reduce internal covariate shift, an experiment is set up to measure quantitatively how much covariate shift is reduced. First, the notion of internal covariate shift needs to be defined mathematically. Specifically, to quantify the adjustment that a layer's parameters make in response to updates in previous layers, the correlation between the gradients of the loss before and after all previous layers are updated is measured, since gradients could capture the shifts from the first-order training method. If the shift introduced by the changes in previous layers is small, then the correlation between the gradients would be close to 1.
-The correlation between the gradients are computed for four models: a standard VGG network, a VGG network with batch normalization layers, a 25-layer deep linear network (DLN) trained with full-batch gradient descent, and a DLN network with batch normalization layers. Interestingly, it is shown that the standard VGG and DLN models both have higher correlations of gradients compared with their counterparts, indicating that the additional batch normalization layers are not reducing internal covariate shift.
-
 
 === Vanishing/exploding gradients ===
 Even though batchnorm was originally introduced to alleviate gradient vanishing or explosion problems, a deep batchnorm network in fact suffers from gradient explosion at initialization time, no matter what it uses for nonlinearity. Thus the optimization landscape is very far from smooth for a randomly initialized, deep batchnorm network.
@@ -289,78 +104,9 @@ Practically, this means deep batchnorm networks are untrainable.
 This is only relieved by skip connections in the fashion of residual networks.This gradient explosion on the surface contradicts the smoothness property explained in the previous section, but in fact they are consistent. The previous section studies the effect of inserting a single batchnorm in a network, while the gradient explosion depends on stacking batchnorms typical of modern deep neural networks.
 
 
-=== Decoupling ===
-Another possible reason for the success of batch normalization is that it decouples the length and direction of the weight vectors and thus facilitates better training.
-By interpreting batch norm as a reparametrization of weight space, it can be shown that the length and the direction of the weights are separated and can thus be trained separately. For a particular neural network unit with input x{\displaystyle x} and weight vector w{\displaystyle w}, denote its output as f(w)=Ex[ϕ(xTw)]{\displaystyle f(w)=E_{x}[\phi (x^{T}w)]}, where ϕ{\displaystyle \phi } is the activation function, and denote S=E[xxT]{\displaystyle S=E[xx^{T}]}. Assume that E[x]=0{\displaystyle E[x]=0}, and that the spectrum of the matrix S{\displaystyle S} is bounded as 0<μ=λmin(S){\displaystyle 0<\mu =\lambda _{min}(S)}, L=λmax(S)<∞{\displaystyle L=\lambda _{max}(S)<\infty }, such that S{\displaystyle S} is symmetric positive definite. Adding batch normalization to this unit thus results in
-fBN(w,γ,β)=Ex[ϕ(BN(xTw))]=Ex[ϕ(γ(xTw−Ex[xTw]varx[xTw]1/2)+β)]{\displaystyle f_{BN}(w,\gamma ,\beta )=E_{x}[\phi (BN(x^{T}w))]=E_{x}{\bigg [}\phi {\bigg (}\gamma ({\frac {x^{T}w-E_{x}[x^{T}w]}{var_{x}[x^{T}w]^{1/2}}})+\beta {\bigg )}{\bigg ]}}, by definition.
-The variance term can be simplified such that varx[xTw]=wTSw{\displaystyle var_{x}[x^{T}w]=w^{T}Sw}. Assume that x{\displaystyle x} has zero mean and β{\displaystyle \beta } can be omitted, then it follows that
-fBN(w,γ)=Ex[ϕ(γxTw(wTSw)1/2)]{\displaystyle f_{BN}(w,\gamma )=E_{x}{\bigg [}\phi {\bigg (}\gamma {\frac {x^{T}w}{(w^{T}Sw)^{1/2}}}{\bigg )}{\bigg ]}}, where (wTSw)12{\displaystyle (w^{T}Sw)^{\frac {1}{2}}} is the induced norm of S{\displaystyle S}, ||w||s{\displaystyle ||w||_{s}}.
-Hence, it could be concluded that fBN(w,γ)=Ex[ϕ(xTw~)]{\displaystyle f_{BN}(w,\gamma )=E_{x}[\phi (x^{T}{\tilde {w}})]}, where w~=γw||w||s{\displaystyle {\tilde {w}}=\gamma {\frac {w}{||w||_{s}}}}, and γ{\displaystyle \gamma } and w{\displaystyle w} accounts for its length and direction separately. This property could then be used to prove the faster convergence of problems with batch normalization.
+--------------------------------------------------------------------------
 
 
-== Linear convergence ==
-
-
-=== Least-square problem ===
-With the reparametrization interpretation, it could then be proved that applying batch normalization to the ordinary least squares problem achieves a linear convergence rate in gradient descent, which is faster than the regular gradient descent with only sub-linear convergence.
-Denote the objective of minimizing an ordinary least squares problem as
-minw~∈RdfOLS(w~)=minw~∈Rd(Ex,y[(y−xTw~)2])=minw~∈Rd(2uTw~+w~TSw~){\displaystyle min_{{\tilde {w}}\in R^{d}}f_{OLS}({\tilde {w}})=min_{{\tilde {w}}\in R^{d}}(E_{x,y}[(y-x^{T}{\tilde {w}})^{2}])=min_{{\tilde {w}}\in R^{d}}(2u^{T}{\tilde {w}}+{\tilde {w}}^{T}S{\tilde {w}})}, where u=E[−yx]{\displaystyle u=E[-yx]} and S=E[xxT]{\displaystyle S=E[xx^{T}]}.
-Since w~=γw||w||s{\displaystyle {\tilde {w}}=\gamma {\frac {w}{||w||_{s}}}}, the objective thus becomes
-minw∈Rd∖{0},γ∈RfOLS(w,γ)=minw∈Rd∖{0},γ∈R(2γuTw||w||S+γ2){\displaystyle min_{w\in R^{d}\backslash \{0\},\gamma \in R}f_{OLS}(w,\gamma )=min_{w\in R^{d}\backslash \{0\},\gamma \in R}{\bigg (}2\gamma {\frac {u^{T}w}{||w||_{S}+\gamma ^{2}}}{\bigg )}}, where 0 is excluded to avoid 0 in the denominator.
-Since the objective is convex with respect to γ{\displaystyle \gamma }, its optimal value could be calculated by setting the partial derivative of the objective against γ{\displaystyle \gamma } to 0. The objective could be further simplified to be
-minw∈Rd∖{0}ρ(w)=minw∈Rd∖{0}(−wTuuTwwTSw){\displaystyle min_{w\in R^{d}\backslash \{0\}}\rho (w)=min_{w\in R^{d}\backslash \{0\}}{\bigg (}-{\frac {w^{T}uu^{T}w}{w^{T}Sw}}{\bigg )}}.
-Note that this objective is a form of the generalized Rayleigh quotient
-ρ~(w)=wTBwwTAw{\displaystyle {\tilde {\rho }}(w)={\frac {w^{T}Bw}{w^{T}Aw}}}, where B∈Rd×d{\displaystyle B\in R^{d\times d}} is a symmetric matrix and A∈Rd×d{\displaystyle A\in R^{d\times d}} is a symmetric positive definite matrix.
-It is proven that the gradient descent convergence rate of the generalized Rayleigh quotient is
-λ1−ρ(wt+1)ρ(wt+1−λ2)≤(1−λ1−λ2λ1−λmin)2tλ1−ρ(wt)ρ(wt)−λ2{\displaystyle {\frac {\lambda _{1}-\rho (w_{t+1})}{\rho (w_{t+1}-\lambda _{2})}}\leq {\bigg (}1-{\frac {\lambda _{1}-\lambda _{2}}{\lambda _{1}-\lambda _{min}}}{\bigg )}^{2t}{\frac {\lambda _{1}-\rho (w_{t})}{\rho (w_{t})-\lambda _{2}}}}, where λ1{\displaystyle \lambda _{1}} is the largest eigenvalue of B{\displaystyle B}, λ2{\displaystyle \lambda _{2}} is the second largest eigenvalue of B{\displaystyle B}, and λmin{\displaystyle \lambda _{min}} is the smallest eigenvalue of B{\displaystyle B}.In our case, B=uuT{\displaystyle B=uu^{T}}is a rank one matrix, and the convergence result can be simplified accordingly. Specifically, consider gradient descent steps of the form wt+1=wt−ηt▽ρ(wt){\displaystyle w_{t+1}=w_{t}-\eta _{t}\triangledown \rho (w_{t})} with step size ηt=wtTSwt2L|ρ(wt)|{\displaystyle \eta _{t}={\frac {w_{t}^{T}Sw_{t}}{2L|\rho (w_{t})|}}}, and starting from ρ(w0)≠0{\displaystyle \rho (w_{0})\neq 0}, then
-ρ(wt)−ρ(w∗)≤(1−μL)2t(ρ(w0)−ρ(w∗)){\displaystyle \rho (w_{t})-\rho (w^{*})\leq {\bigg (}1-{\frac {\mu }{L}}{\bigg )}^{2t}(\rho (w_{0})-\rho (w^{*}))}.
-
-
-=== Learning halfspace problem ===
-The problem of learning halfspaces refers to the training of the Perceptron, which is the simplest form of neural network. The optimization problem in this case is
-minw~∈RdfLH(w~)=Ey,x[ϕ(zTw~)]{\displaystyle min_{{\tilde {w}}\in R^{d}}f_{LH}({\tilde {w}})=E_{y,x}[\phi (z^{T}{\tilde {w}})]}, where z=−yx{\displaystyle z=-yx} and ϕ{\displaystyle \phi } is an arbitrary loss function.
-Suppose that ϕ{\displaystyle \phi } is infinitely differentiable and has a bounded derivative. Assume that the objective function fLH{\displaystyle f_{LH}} is ζ{\displaystyle \zeta }-smooth, and that a solution α∗=argminα||▽f(αw)||2{\displaystyle \alpha ^{*}=argmin_{\alpha }||\triangledown f(\alpha w)||^{2}} exists and is bounded such that −∞<α∗<∞{\displaystyle -\infty <\alpha ^{*}<\infty }. Also assume z{\displaystyle z} is a multivariate normal random variable. With the Gaussian assumption, it can be shown that all critical points lie on the same line, for any choice of loss function ϕ{\displaystyle \phi }. Specifically, the gradient of fLH{\displaystyle f_{LH}} could be represented as
-▽w~fLH(w~)=c1(w~)u+c2(w~)Sw~{\displaystyle \triangledown _{\tilde {w}}f_{LH}({\tilde {w}})=c_{1}({\tilde {w}})u+c_{2}({\tilde {w}})S{\tilde {w}}}, where  c1(w~)=Ez[ϕ(1)(zTw~)]−Ez[ϕ(2)(zTw~)](uTw~){\displaystyle c_{1}({\tilde {w}})=E_{z}[\phi ^{(1)}(z^{T}{\tilde {w}})]-E_{z}[\phi ^{(2)}(z^{T}{\tilde {w}})](u^{T}{\tilde {w}})}, c2(w~)=Ez[ϕ(2)(zTw~)]{\displaystyle c_{2}({\tilde {w}})=E_{z}[\phi ^{(2)}(z^{T}{\tilde {w}})]}, and ϕ(i){\displaystyle \phi ^{(i)}} is the i{\displaystyle i}-th derivative of ϕ{\displaystyle \phi }.
-By setting the gradient to 0, it thus follows that the bounded critical points w~∗{\displaystyle {\tilde {w}}_{*}} can be expressed as w~∗=g∗S−1u{\displaystyle {\tilde {w}}_{*}=g_{*}S^{-1}u}, where g∗{\displaystyle g_{*}} depends on w~∗{\displaystyle {\tilde {w}}_{*}} and ϕ{\displaystyle \phi }. Combining this global property with length-direction decoupling, it could thus be proved that this optimization problem converges linearly.
-First, a variation of gradient descent with batch normalization, Gradient Descent in Normalized Parameterization (GDNP), is designed for the objective function minw∈Rd∖{0},γ∈RfLH(w,γ){\displaystyle min_{w\in R^{d}\backslash \{0\},\gamma \in R}f_{LH}(w,\gamma )}, such that the direction and length of the weights are updated separately. Denote the stopping criterion of GDNP as
-h(wt,γt)=Ez[ϕ′(zTw~t)](uTwt)−Ez[ϕ″(zTw~t)](uTwt)2{\displaystyle h(w_{t},\gamma _{t})=E_{z}[\phi '(z^{T}{\tilde {w}}_{t})](u^{T}w_{t})-E_{z}[\phi ''(z^{T}{\tilde {w}}_{t})](u^{T}w_{t})^{2}}.
-Let the step size be
-st=s(wt,γt)=−||wt||S3Lgth(wt,γt){\displaystyle s_{t}=s(w_{t},\gamma _{t})=-{\frac {||w_{t}||_{S}^{3}}{Lg_{t}h(w_{t},\gamma _{t})}}}.
-For each step, if h(wt,γt)≠0{\displaystyle h(w_{t},\gamma _{t})\neq 0}, then update the direction as
-wt+1=wt−st▽wf(wt,γt){\displaystyle w_{t+1}=w_{t}-s_{t}\triangledown _{w}f(w_{t},\gamma _{t})}.
-Then update the length according to
-γt=Bisection(Ts,f,wt){\displaystyle \gamma _{t}=Bisection(T_{s},f,w_{t})}, where Bisection(){\displaystyle Bisection()} is the classical bisection algorithm, and Ts{\displaystyle T_{s}} is the total iterations ran in the bisection step.
-Denote the total number of iterations as Td{\displaystyle T_{d}}, then the final output of GDNP is
-w~Td=γTdwTd||wTd||S{\displaystyle {\tilde {w}}_{T_{d}}=\gamma _{T_{d}}{\frac {w_{T_{d}}}{||w_{T_{d}}||_{S}}}}.
-The GDNP algorithm thus slightly modifies the batch normalization step for the ease of mathematical analysis.
-It can be shown that in GDNP, the partial derivative of fLH{\displaystyle f_{LH}}against the length component converges to zero at a linear rate, such that
-(∂γfLH(wt,at(Ts))2≤2−Tsζ|bt(0)−at(0)|μ2{\displaystyle (\partial _{\gamma }f_{LH}(w_{t},a_{t}^{(T_{s})})^{2}\leq {\frac {2^{-T_{s}}\zeta |b_{t}^{(0)}-a_{t}^{(0)}|}{\mu ^{2}}}}, where at(0){\displaystyle a_{t}^{(0)}} and bt0{\displaystyle b_{t}^{0}} are the two starting points of the bisection algorithm on the left and on the right, correspondingly.
-Further, for each iteration, the norm of the gradient of fLH{\displaystyle f_{LH}} with respect to w{\displaystyle w} converges linearly, such that
-||wt||S2||▽fLH(wt,gt)||S−12≤(1−μL)2tΦ2γt2(ρ(w0)−ρ∗){\displaystyle ||w_{t}||_{S}^{2}||\triangledown f_{LH}(w_{t},g_{t})||_{S^{-1}}^{2}\leq {\bigg (}1-{\frac {\mu }{L}}{\bigg )}^{2t}\Phi ^{2}\gamma _{t}^{2}(\rho (w_{0})-\rho ^{*})}.
-Combining these two inequalities, a bound could thus be obtained for the gradient with respect to w~Td{\displaystyle {\tilde {w}}_{T_{d}}}:
-||▽w~f(w~Td)||2≤(1−μL)2TdΦ2(ρ(w0)−ρ∗)+2−Tsζ|bt(0)−at(0)|μ2{\displaystyle ||\triangledown _{\tilde {w}}f({\tilde {w}}_{T_{d}})||^{2}\leq {\bigg (}1-{\frac {\mu }{L}}{\bigg )}^{2T_{d}}\Phi ^{2}(\rho (w_{0})-\rho ^{*})+{\frac {2^{-T_{s}}\zeta |b_{t}^{(0)}-a_{t}^{(0)}|}{\mu ^{2}}}}, such that the algorithm is guaranteed to converge linearly.
-Although the proof stands on the assumption of Gaussian input, it is also shown in experiments that GDNP could accelerate optimization without this constraint.
-
-
-=== Neural networks ===
-Consider a multilayer perceptron (MLP) with one hidden layer and m{\displaystyle m} hidden units with mapping from input x∈Rd{\displaystyle x\in R^{d}} to a scalar output described as
-Fx(W~,Θ)=∑i=1mθiϕ(xTw~(i)){\displaystyle F_{x}({\tilde {W}},\Theta )=\sum _{i=1}^{m}\theta _{i}\phi (x^{T}{\tilde {w}}^{(i)})}, where w~(i){\displaystyle {\tilde {w}}^{(i)}} and θi{\displaystyle \theta _{i}} are the input and output weights of unit i{\displaystyle i} correspondingly, and ϕ{\displaystyle \phi } is the activation function and is assumed to be a tanh function.
-The input and output weights could then be optimized with
-minW~,Θ(fNN(W~,Θ)=Ey,x[l(−yFx(W~,Θ))]){\displaystyle min_{{\tilde {W}},\Theta }(f_{NN}({\tilde {W}},\Theta )=E_{y,x}[l(-yF_{x}({\tilde {W}},\Theta ))])}, where l{\displaystyle l} is a loss function, W~={w~(1),...,w~(m)}{\displaystyle {\tilde {W}}=\{{\tilde {w}}^{(1)},...,{\tilde {w}}^{(m)}\}}, and Θ={θ(1),...,θ(m)}{\displaystyle \Theta =\{\theta ^{(1)},...,\theta ^{(m)}\}}.
-Consider fixed Θ{\displaystyle \Theta } and optimizing only W~{\displaystyle {\tilde {W}}}, it can be shown that the critical points of fNN(W~){\displaystyle f_{NN}({\tilde {W}})} of a particular hidden unit i{\displaystyle i}, w^(i){\displaystyle {\hat {w}}^{(i)}}, all align along one line depending on incoming information into the hidden layer, such that
-w^(i)=c^(i)S−1u{\displaystyle {\hat {w}}^{(i)}={\hat {c}}^{(i)}S^{-1}u}, where c^(i)∈R{\displaystyle {\hat {c}}^{(i)}\in R} is a scalar, i=1,...,m{\displaystyle i=1,...,m}.
-This result could be proved by setting the gradient of fNN{\displaystyle f_{NN}} to zero and solving the system of equations.
-Apply the GDNP algorithm to this optimization problem by alternating optimization over the different hidden units. Specifically, for each hidden unit, run GDNP to find the optimal W{\displaystyle W} and γ{\displaystyle \gamma }. With the same choice of stopping criterion and stepsize, it follows that
-||▽w~(i)f(w~t(i))||S−12≤(1−μL)2tC(ρ(w0)−ρ∗)+2−Ts(i)ζ|bt(0)−at(0)|μ2{\displaystyle ||\triangledown _{{\tilde {w}}^{(i)}}f({\tilde {w}}_{t}^{(i)})||_{S^{-1}}^{2}\leq {\bigg (}1-{\frac {\mu }{L}}{\bigg )}^{2t}C(\rho (w_{0})-\rho ^{*})+{\frac {2^{-T_{s}^{(i)}}\zeta |b_{t}^{(0)}-a_{t}^{(0)}|}{\mu ^{2}}}}.
-Since the parameters of each hidden unit converge linearly, the whole optimization problem has a linear rate of convergence.
-
-
-
-
-
-== Further reading ==
-Ioffe, Sergey; Szegedy, Christian (2015). "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift", ICML'15: Proceedings of the 32nd International Conference on International Conference on Machine Learning - Volume 37, July 2015 Pages 448–456
-Simonyan, Karen; Zisserman, Andrew (2014). "Very Deep Convolutional Networks for Large-Scale Image Recognition". arXiv:1409.1556 [cs.CV].
 In machine learning, a hyperparameter is a parameter, such as the learning rate or choice of optimizer, which specifies details of the learning process, hence the name hyperparameter. This is in contrast to parameters which determine the model itself.
 Hyperparameters can be classified as model hyperparameters, that typically cannot be inferred while fitting the machine to the training set because the objective function is typically non-differentiable with respect to them. As a result, gradient based optimization methods cannot be applied directly. An example of a model hyperparameter is the topology and size of a neural network. Examples of algorithm hyperparameters are learning rate and batch size as well as mini-batch size. Batch size can refer to the full data sample where mini-batch size would be a smaller sample set.
 Different model training algorithms require different hyperparameters, some simple algorithms (such as ordinary least squares regression) require none. Given these hyperparameters, the training algorithm learns the parameters from the data. For instance, LASSO is an algorithm that adds a regularization hyperparameter to ordinary least squares regression, which has to be set before estimating the parameters through the training algorithm.
@@ -391,14 +137,7 @@ An inherent stochasticity in learning directly implies that the empirical hyperp
 Hyperparameter optimization finds a tuple of hyperparameters that yields an optimal model which minimizes a predefined loss function on given test data.  The objective function takes a tuple of hyperparameters and returns the associated loss. Typically these methods are not gradient based, and instead apply concepts from derivative-free optimization or black box optimization.
 
 
-== Reproducibility ==
-Apart from tuning hyperparameters, machine learning involves storing and organizing the parameters and results, and making sure they are reproducible. In the absence of a robust infrastructure for this purpose, research code often evolves quickly and compromises essential aspects like bookkeeping and reproducibility. Online collaboration platforms for machine learning go further by allowing scientists to automatically share, organize and discuss experiments, data, and algorithms. Reproducibility can be particularly difficult for deep learning models. For example, research has shown that deep learning models depend very heavily even on the random seed selection of the random number generator.
-
-
-
-Hyper-heuristic
-Replication crisis
-
+--------------------------------------------------------------------------
 
 
 Convolutional neural network (CNN) is a regularized type of feed-forward neural network that learns feature engineering by itself via filters (or kernel) optimization. Vanishing gradients and exploding gradients, seen during backpropagation in earlier neural networks, are prevented by using regularized weights over fewer connections. For example, for each neuron in the fully-connected layer 10,000 weights would be required for processing an image sized 100 × 100 pixels. However, applying cascaded convolution (or cross-correlation) kernels,  only 25 neurons are required to process 5x5-sized tiles. Higher-layer features are extracted  from wider context windows, compared to lower-layer features.
@@ -454,134 +193,9 @@ To manipulate the receptive field size as desired, there are some alternatives t
 Each neuron in a neural network computes an output value by applying a specific function to the input values received from the receptive field in the previous layer. The function that is applied to the input values is determined by a vector of weights and a bias (typically real numbers). Learning consists of iteratively adjusting these biases and weights.
 The vectors of weights and biases are called filters and represent particular features of the input (e.g., a particular shape). A distinguishing feature of CNNs is that many neurons can share the same filter. This reduces the memory footprint because a single bias and a single vector of weights are used across all receptive fields that share that filter, as opposed to each receptive field having its own bias and vector weighting.
 
-
-== History ==
-CNN are often compared to the way the brain achieves vision processing in living organisms.
-
-
-=== Receptive fields in the visual cortex ===
-Work by Hubel and Wiesel in the 1950s and 1960s showed that cat visual cortices contain neurons that individually respond to small regions of the visual field. Provided the eyes are not moving, the region of visual space within which visual stimuli affect the firing of a single neuron is known as its receptive field. Neighboring cells have similar and overlapping receptive fields. Receptive field size and location varies systematically across the cortex to form a complete map of visual space. The cortex in each hemisphere represents the contralateral visual field.Their 1968 paper identified two basic visual cell types in the brain:
-simple cells, whose output is maximized by straight edges having particular orientations within their receptive field
-complex cells, which have larger receptive fields, whose output is insensitive to the exact position of the edges in the field.Hubel and Wiesel also proposed a cascading model of these two types of cells for use in pattern recognition tasks.
-
-
-=== Neocognitron, origin of the CNN architecture ===
-The "neocognitron" was introduced by Kunihiko Fukushima in 1980.
-It was inspired by the above-mentioned work of Hubel and Wiesel. The neocognitron introduced the two basic types of layers in CNNs: 
-
-A convolutional layer which contains units whose receptive fields cover a patch of the previous layer. The weight vector (the set of adaptive parameters) of such a unit is often called a filter. Units can share filters.
-Downsampling layers which contain units whose receptive fields cover patches of previous convolutional layers. Such a unit typically computes the average of the activations of the units in its patch. This downsampling helps to correctly classify objects in visual scenes even when the objects are shifted.In 1969, Kunihiko Fukushima also introduced the ReLU (rectified linear unit) activation function. The rectifier has become the most popular activation function for CNNs and  deep neural networks in general.In a variant of the neocognitron called the cresceptron, instead of using Fukushima's spatial averaging, J. Weng et al. in 1993 introduced a method called max-pooling where a downsampling unit computes the maximum of the activations of the units in its patch. Max-pooling is often used in modern CNNs.Several supervised and unsupervised learning algorithms have been proposed over the decades to train the weights of a neocognitron. Today, however, the CNN architecture is usually trained through backpropagation.
-The neocognitron is the first CNN which requires units located at multiple network positions to have shared weights.
-Convolutional neural networks were presented at the Neural Information Processing Workshop in 1987, automatically analyzing time-varying signals by replacing learned multiplication with convolution in time, and demonstrated for speech recognition.
-
-
-=== Time delay neural networks ===
-The time delay neural network (TDNN) was introduced in 1987 by Alex Waibel et al. for phoneme recognition and was one of the first convolutional networks, as it achieved shift-invariance. A TDNN is a 1-D convolutional neural net where the convolution is performed along the time axis of the data. It is the first CNN utilizing weight sharing in combination with a training by gradient descent, using backpropagation. Thus, while also using a pyramidal structure as in the neocognitron, it performed a global optimization of the weights instead of a local one.. 
-TDNNs are convolutional networks that share weights along the temporal dimension. They allow speech signals to be processed time-invariantly. In 1990 Hampshire and Waibel introduced a variant that performs a two-dimensional convolution. Since these TDNNs operated on spectrograms, the resulting phoneme recognition system was invariant to both time and frequency shifts. This inspired translation invariance in image processing with CNNs. The tiling of neuron outputs can cover timed stages.TDNNs now achieve the best performance in far-distance speech recognition.
-
-
-==== Max pooling ====
-In 1990 Yamaguchi et al. introduced the concept of max pooling, a fixed filtering operation that calculates and propagates the maximum value of a given region. They did so by combining TDNNs with max pooling to realize a speaker-independent isolated word recognition system. In their system they used several TDNNs per word, one for each syllable. The results of each TDNN over the input signal were combined using max pooling and the outputs of the pooling layers were then passed on to networks performing the actual word classification.
-
-
-=== Image recognition with CNNs trained by gradient descent ===
-Denker et al. (1989) designed a 2-D CNN system to recognize hand-written ZIP Code numbers. However, the lack of an efficient training method to determine the kernel coefficients of the involved convolutions meant that all the coefficients had to be laboriously hand-designed.Following the advances in the training of 1-D CNNs by Waibel et al. (1987), Yann LeCun et al. (1989) used back-propagation to learn the convolution kernel coefficients directly from images of hand-written numbers. Learning was thus fully automatic, performed better than manual coefficient design, and was suited to a broader range of image recognition problems and image types. 
-Wei Zhang et al. (1988) used back-propagation to train the convolution kernels of a CNN for alphabets recognition. The model was called Shift-Invariant Artificial Neural Network (SIANN) before the name CNN was coined later in the early 1990s. Wei Zhang et al. also applied the same CNN without the last fully connected layer for medical image object segmentation (1991) and breast cancer detection in mammograms (1994).This approach became a foundation of modern computer vision.
-
-
-==== LeNet-5 ====
-
-LeNet-5, a pioneering 7-level convolutional network by LeCun et al. in 1995, that classifies digits, was applied by several banks to recognize hand-written numbers on checks (British English: cheques) digitized in 32x32 pixel images. The ability to process higher-resolution images requires larger and more layers of convolutional neural networks, so this technique is constrained by the availability of computing resources.
-
-
-=== Shift-invariant neural network ===
-A shift-invariant neural network was proposed by Wei Zhang et al. for image character recognition in 1988. It is a modified Neocognitron by keeping only the convolutional interconnections between the image feature layers and the last fully connected layer.  The model was trained with back-propagation. The training algorithm were further improved in 1991 to improve its generalization ability. The model architecture was modified by removing the last fully connected layer and applied for medical image segmentation (1991) and automatic detection of breast cancer in mammograms (1994).A different convolution-based design was proposed in 1988 for application to decomposition of one-dimensional electromyography convolved signals via de-convolution. This design was modified in 1989 to other de-convolution-based designs.
-
-
-=== Neural abstraction pyramid ===
-The feed-forward architecture of convolutional neural networks was extended in the neural abstraction pyramid by lateral and feedback connections. The resulting recurrent convolutional network allows for the flexible incorporation of contextual information to iteratively resolve local ambiguities. In contrast to previous models, image-like outputs at the highest resolution were generated, e.g., for semantic segmentation, image reconstruction, and object localization tasks.
-
-
-=== GPU implementations ===
-Although CNNs were invented in the 1980s, their breakthrough in the 2000s required fast implementations on graphics processing units (GPUs).
-In 2004, it was shown by K. S. Oh and K. Jung that standard neural networks can be greatly accelerated on GPUs. Their implementation was 20 times faster than an equivalent implementation on CPU. In 2005, another paper also emphasised the value of GPGPU for machine learning.The first GPU-implementation of a CNN was described in 2006 by K. Chellapilla et al. Their implementation was 4 times faster than an equivalent implementation on CPU. Subsequent work also used GPUs, initially for other types of neural networks (different from CNNs), especially unsupervised neural networks.In 2010, Dan Ciresan et al. at IDSIA showed that even deep standard neural networks with many layers can be quickly trained on GPU by supervised learning through the old method known as backpropagation. Their network outperformed previous machine learning methods on the MNIST handwritten digits benchmark. In 2011, they extended this GPU approach to CNNs, achieving an acceleration factor of 60, with impressive results. In 2011, they used such CNNs on GPU to win an image recognition contest where they achieved superhuman performance for the first time. Between May 15, 2011, and September 30, 2012, their CNNs won no less than four image competitions. In 2012, they also significantly improved on the best performance in the literature for multiple image databases, including the MNIST database, the NORB database, the HWDB1.0 dataset (Chinese characters) and the CIFAR10 dataset (dataset of 60000 32x32 labeled RGB images).Subsequently, a similar GPU-based CNN by Alex Krizhevsky et al. won the ImageNet Large Scale Visual Recognition Challenge 2012. A very deep CNN with over 100 layers by Microsoft won the ImageNet 2015 contest.
-
-
-=== Intel Xeon Phi implementations ===
-Compared to the training of CNNs using GPUs, not much attention was given to the Intel Xeon Phi coprocessor.
-A notable development is a parallelization method for training convolutional neural networks on the Intel Xeon Phi, named Controlled Hogwild with Arbitrary Order of Synchronization (CHAOS).
-CHAOS exploits both the thread- and SIMD-level parallelism that is available on the Intel Xeon Phi.
-
-
-== Distinguishing features ==
-In the past, traditional multilayer perceptron (MLP) models were used for image recognition. However, the full connectivity between nodes caused the curse of dimensionality, and was computationally intractable with higher-resolution images. A 1000×1000-pixel image with RGB color channels has 3 million weights per fully-connected neuron, which is too high to feasibly process efficiently at scale.
-
-For example, in CIFAR-10, images are only of size 32×32×3 (32 wide, 32 high, 3 color channels), so a single fully connected neuron in the first hidden layer of a regular neural network would have 32*32*3 = 3,072 weights. A 200×200 image, however, would lead to neurons that have 200*200*3 = 120,000 weights.
-Also, such network architecture does not take into account the spatial structure of data, treating input pixels which are far apart in the same way as pixels that are close together. This ignores locality of reference in data with a grid-topology (such as images), both computationally and semantically. Thus, full connectivity of neurons is wasteful for purposes such as image recognition that are dominated by spatially local input patterns.
-Convolutional neural networks are variants of multilayer perceptrons, designed to emulate the behavior of a visual cortex. These models mitigate the challenges posed by the MLP architecture by exploiting the strong spatially local correlation present in natural images. As opposed to MLPs, CNNs have the following distinguishing features:
-
-3D volumes of neurons. The layers of a CNN have neurons arranged in 3 dimensions: width, height and depth. Where each neuron inside a convolutional layer is connected to only a small region of the layer before it, called a receptive field. Distinct types of layers, both locally and completely connected, are stacked to form a CNN architecture.
-Local connectivity: following the concept of receptive fields, CNNs exploit spatial locality by enforcing a local connectivity pattern between neurons of adjacent layers. The architecture thus ensures that the learned "filters" produce the strongest response to a spatially local input pattern. Stacking many such layers leads to nonlinear filters that become increasingly global (i.e. responsive to a larger region of pixel space) so that the network first creates representations of small parts of the input, then from them assembles representations of larger areas.
-Shared weights: In CNNs, each filter is replicated across the entire visual field. These replicated units share the same parameterization (weight vector and bias) and form a feature map. This means that all the neurons in a given convolutional layer respond to the same feature within their specific response field. Replicating units in this way allows for the resulting activation map to be equivariant under shifts of the locations of input features in the visual field, i.e. they grant translational equivariance - given that the layer has a stride of one.
-Pooling: In a CNN's pooling layers, feature maps are divided into rectangular sub-regions, and the features in each rectangle are independently down-sampled to a single value, commonly by taking their average or maximum value. In addition to reducing the sizes of feature maps, the pooling operation grants a degree of local translational invariance to the features contained therein, allowing the CNN to be more robust to variations in their positions.Together, these properties allow CNNs to achieve better generalization on vision problems. Weight sharing dramatically reduces the number of free parameters learned, thus lowering the memory requirements for running the network and allowing the training of larger, more powerful networks.
-
-
-== Building blocks ==
-
-A CNN architecture is formed by a stack of distinct layers that transform the input volume into an output volume (e.g. holding the class scores) through a differentiable function. A few distinct types of layers are commonly used. These are further discussed below.
-
-
-=== Convolutional layer ===
-The convolutional layer is the core building block of a CNN. The layer's parameters consist of a set of learnable filters (or kernels), which have a small receptive field, but extend through the full depth of the input volume. During the forward pass, each filter is convolved across the width and height of the input volume, computing the dot product between the filter entries and the input, producing a 2-dimensional activation map of that filter. As a result, the network learns filters that activate when it detects some specific type of feature at some spatial position in the input.Stacking the activation maps for all filters along the depth dimension forms the full output volume of the convolution layer. Every entry in the output volume can thus also be interpreted as an output of a neuron that looks at a small region in the input. Each entry in an activation map use the same set of parameters that define the filter.
-Self-supervised learning has been adapted for use in convolutional layers by using sparse patches with a high-mask ratio and a global response normalization layer.
-
-
-==== Local connectivity ====
-When dealing with high-dimensional inputs such as images, it is impractical to connect neurons to all neurons in the previous volume because such a network architecture does not take the spatial structure of the data into account. Convolutional networks exploit spatially local correlation by enforcing a sparse local connectivity pattern between neurons of adjacent layers: each neuron is connected to only a small region of the input volume.
-The extent of this connectivity is a hyperparameter called the receptive field of the neuron. The connections are local in space (along width and height), but always extend along the entire depth of the input volume. Such an architecture ensures that the learned (British English: learnt) filters produce the strongest response to a spatially local input pattern.
-
-
-==== Spatial arrangement ====
-Three hyperparameters control the size of the output volume of the convolutional layer: the depth, stride, and padding size:
-
-The depth of the output volume controls the number of neurons in a layer that connect to the same region of the input volume. These neurons learn to activate for different features in the input. For example, if the first convolutional layer takes the raw image as input, then different neurons along the depth dimension may activate in the presence of various oriented edges, or blobs of color.
-Stride controls how depth columns around the width and height are allocated. If the stride is 1, then we move the filters one pixel at a time. This leads to heavily overlapping receptive fields between the columns, and to large output volumes. For any integer S>0,{\textstyle S>0,} a stride S means that the filter is translated S units at a time per output. In practice, S≥3{\textstyle S\geq 3} is rare. A greater stride means smaller overlap of receptive fields and smaller spatial dimensions of the output volume.
-Sometimes, it is convenient to pad the input with zeros (or other values, such as the average of the region) on the border of the input volume. The size of this padding is a third hyperparameter. Padding provides control of the output volume's spatial size. In particular, sometimes it is desirable to exactly preserve the spatial size of the input volume, this is commonly referred to as "same" padding.The spatial size of the output volume is a function of the input volume size W{\displaystyle W}, the kernel field size K{\displaystyle K} of the convolutional layer neurons, the stride S{\displaystyle S}, and the amount of zero padding P{\displaystyle P} on the border. The number of neurons that "fit" in a given volume is then:
-
-If this number is not an integer, then the strides are incorrect and the neurons cannot be tiled to fit across the input volume in a symmetric way. In general, setting zero padding to be P=(K−1)/2{\textstyle P=(K-1)/2} when the stride is S=1{\displaystyle S=1} ensures that the input volume and output volume will have the same size spatially. However, it is not always completely necessary to use all of the neurons of the previous layer. For example, a neural network designer may decide to use just a portion of padding.
-
-
 ==== Parameter sharing ====
 A parameter sharing scheme is used in convolutional layers to control the number of free parameters. It relies on the assumption that if a patch feature is useful to compute at some spatial position, then it should also be useful to compute at other positions. Denoting a single 2-dimensional slice of depth as a depth slice, the neurons in each depth slice are constrained to use the same weights and bias.
 Since all neurons in a single depth slice share the same parameters, the forward pass in each depth slice of the convolutional layer can be computed as a convolution of the neuron's weights with the input volume. Therefore, it is common to refer to the sets of weights as a filter (or a kernel), which is convolved with the input. The result of this convolution is an activation map, and the set of activation maps for each different filter are stacked together along the depth dimension to produce the output volume. Parameter sharing contributes to the translation invariance of the CNN architecture.Sometimes, the parameter sharing assumption may not make sense. This is especially the case when the input images to a CNN have some specific centered structure; for which we expect completely different features to be learned on different spatial locations. One practical example is when the inputs are faces that have been centered in the image: we might expect different eye-specific or hair-specific features to be learned in different parts of the image. In that case it is common to relax the parameter sharing scheme, and instead simply call the layer a "locally connected layer".
-
-
-=== Pooling layer ===
-Another important concept of CNNs is pooling, which is a form of non-linear down-sampling. There are several non-linear functions to implement pooling, where max pooling is the most common. It partitions the input image into a set of rectangles and, for each such sub-region, outputs the maximum.
-Intuitively, the exact location of a feature is less important than its rough location relative to other features. This is the idea behind the use of pooling in convolutional neural networks. The pooling layer serves to progressively reduce the spatial size of the representation, to reduce the number of parameters, memory footprint and amount of computation in the network, and hence to also control overfitting. This is known as down-sampling. It is common to periodically insert a pooling layer between successive convolutional layers (each one typically followed by an activation function, such as a ReLU layer) in a CNN architecture.: 460–461  While pooling layers contribute to local translation invariance, they do not provide global translation invariance in a CNN, unless a form of global pooling is used. The pooling layer commonly operates independently on every depth, or slice, of the input and resizes it spatially. A very common form of max pooling is a layer with filters of size 2×2, applied with a stride of 2, which subsamples every depth slice in the input by 2 along both width and height, discarding 75% of the activations:
-In this case, every max operation is over 4 numbers. The depth dimension remains unchanged (this is true for other forms of pooling as well).
-In addition to max pooling, pooling units can use other functions, such as average pooling or ℓ2-norm pooling. Average pooling was often used historically but has recently fallen out of favor compared to max pooling, which generally performs better in practice.Due to the effects of fast spatial reduction of the size of the representation, there is a recent trend towards using smaller filters or discarding pooling layers altogether.
-"Region of Interest" pooling (also known as RoI pooling) is a variant of max pooling, in which output size is fixed and input rectangle is a parameter.Pooling is a downsampling method and an important component of convolutional neural networks for object detection based on the Fast R-CNN architecture.
-
-
-=== Channel Max Pooling ===
-A CMP operation layer conducts the MP operation along the channel side among the corresponding positions of the consecutive feature maps for the purpose of redundant information elimination. The CMP makes the significant features gather together within fewer channels, which is important for fine-grained image classification that needs more discriminating features. Meanwhile, another advantage of the CMP operation is to make the channel number of feature maps smaller before it connects to the first fully connected (FC) layer. Similar to the MP operation, we denote the input feature maps and output feature maps of a CMP layer as F ∈ R(C×M×N) and C ∈ R(c×M×N), respectively, where C and c are the channel numbers of the input and output feature maps, M and N are the widths and the height of the feature maps, respectively. Note that the CMP operation only changes the channel number of the feature maps. The width and the height of the feature maps are not changed, which is different from the MP operation.
-
-
-=== ReLU layer ===
-ReLU is the abbreviation of rectified linear unit introduced by Kunihiko Fukushima in 1969. ReLU applies the non-saturating activation function f(x)=max(0,x){\textstyle f(x)=\max(0,x)}. It effectively removes negative values from an activation map by setting them to zero. It introduces nonlinearity to the decision function and in the overall network without affecting the receptive fields of the convolution layers.
-In 2011, Xavier Glorot, Antoine Bordes and Yoshua Bengio found that ReLU enables better training of deeper networks, compared to widely used activation functions prior to 2011.
-Other functions can also be used to increase nonlinearity, for example the saturating hyperbolic tangent f(x)=tanh⁡(x){\displaystyle f(x)=\tanh(x)}, f(x)=|tanh⁡(x)|{\displaystyle f(x)=|\tanh(x)|}, and the sigmoid function σ(x)=(1+e−x)−1{\textstyle \sigma (x)=(1+e^{-x})^{-1}}. ReLU is often preferred to other functions because it trains the neural network several times faster without a significant penalty to generalization accuracy.
-
-
-=== Fully connected layer ===
-After several convolutional and max pooling layers, the final classification is done via fully connected layers. Neurons in a fully connected layer have connections to all activations in the previous layer, as seen in regular (non-convolutional) artificial neural networks. Their activations can thus be computed as an affine transformation, with matrix multiplication followed by a bias offset (vector addition of a learned or fixed bias term).
-
-
-=== Loss layer ===
-
-The "loss layer", or "loss function", specifies how training penalizes the deviation between the predicted output of the network, and the true data labels (during supervised learning). Various loss functions can be used, depending on the specific task.
-The Softmax loss function is used for predicting a single class of K mutually exclusive classes. Sigmoid cross-entropy loss is used for predicting K independent probability values in [0,1]{\displaystyle [0,1]}. Euclidean loss is used for regressing to real-valued labels (−∞,∞){\displaystyle (-\infty ,\infty )}.
 
 
 == Hyperparameters ==
@@ -614,28 +228,6 @@ The challenge is to find the right level of granularity so as to create abstract
 Max pooling is typically used, often with a 2x2 dimension. This implies that the input is drastically downsampled, reducing processing cost.
 Greater pooling reduces the dimension of the signal, and may result in unacceptable information loss. Often, non-overlapping pooling windows perform best.
 
-
-=== Dilation ===
-Dilation involves ignoring pixels within a kernel. This reduces processing/memory potentially without significant signal loss. A dilation of 2 on a 3x3 kernel expands the kernel to 5x5, while still processing 9 (evenly spaced) pixels. Accordingly, dilation of 4 expands the kernel to 7x7.
-
-
-== Translation equivariance and aliasing ==
-It is commonly assumed that CNNs are invariant to shifts of the input. Convolution or pooling layers within a CNN that do not have a stride greater than one are indeed equivariant to translations of the input. However, layers with a stride greater than one ignore the Nyquist-Shannon sampling theorem and might lead to aliasing of the input signal While, in principle, CNNs are capable of implementing anti-aliasing filters, it has been observed that this does not happen in practice  and yield models that are not equivariant to translations.
-Furthermore, if a CNN makes use of fully connected layers, translation equivariance does not imply translation invariance, as the fully connected layers are not invariant to shifts of the input. One solution for complete translation invariance is avoiding any down-sampling throughout the network and applying global average pooling at the last layer. Additionally, several other partial solutions have been proposed, such as anti-aliasing before downsampling operations, spatial transformer networks, data augmentation, subsampling combined with pooling, and capsule neural networks.
-
-
-== Evaluation ==
-The accuracy of the final model is based on a sub-part of the dataset set apart at the start, often called a test-set. Other times methods such as k-fold cross-validation are applied. Other strategies include using conformal prediction.
-
-
-== Regularization methods ==
-
-Regularization is a process of introducing additional information to solve an ill-posed problem or to prevent overfitting. CNNs use various types of regularization.
-
-
-=== Empirical ===
-
-
 ==== Dropout ====
 Because a fully connected layer occupies most of the parameters, it is prone to overfitting. One method to reduce overfitting is dropout, introduced in 2014. At each training stage, individual nodes are either "dropped out" of the net (ignored) with probability 1−p{\displaystyle 1-p} or kept with probability p{\displaystyle p}, so that a reduced network is left; incoming and outgoing edges to a dropped-out node are also removed. Only the reduced network is trained on the data in that stage. The removed nodes are then reinserted into the network with their original weights.
 In the training stages, p{\displaystyle p} is usually 0.5; for input nodes, it is typically much higher because information is directly lost when input nodes are ignored.
@@ -643,135 +235,15 @@ At testing time after training has finished, we would ideally like to find a sam
 By avoiding training all nodes on all training data, dropout decreases overfitting. The method also significantly improves training speed. This makes the model combination practical, even for deep neural networks. The technique seems to reduce node interactions, leading them to learn more robust features that better generalize to new data.
 
 
-==== DropConnect ====
-DropConnect is the generalization of dropout in which each connection, rather than each output unit, can be dropped with probability 1−p{\displaystyle 1-p}. Each unit thus receives input from a random subset of units in the previous layer.DropConnect is similar to dropout as it introduces dynamic sparsity within the model, but differs in that the sparsity is on the weights, rather than the output vectors of a layer. In other words, the fully connected layer with DropConnect becomes a sparsely connected layer in which the connections are chosen at random during the training stage.
-
-
-==== Stochastic pooling ====
-A major drawback to Dropout is that it does not have the same benefits for convolutional layers, where the neurons are not fully connected.
-Even before Dropout, in 2013 a technique called stochastic pooling, the conventional deterministic pooling operations were replaced with a stochastic procedure, where the activation within each pooling region is picked randomly according to a multinomial distribution, given by the activities within the pooling region. This approach is free of hyperparameters and can be combined with other regularization approaches, such as dropout and data augmentation.
-An alternate view of stochastic pooling is that it is equivalent to standard max pooling but with many copies of an input image, each having small local deformations. This is similar to explicit elastic deformations of the input images, which delivers excellent performance on the MNIST data set. Using stochastic pooling in a multilayer model gives an exponential number of deformations since the selections in higher layers are independent of those below.
-
-
-==== Artificial data ====
-
-Because the degree of model overfitting is determined by both its power and the amount of training it receives, providing a convolutional network with more training examples can reduce overfitting. Because there is often not enough available data to train, especially considering that some part should be spared for later testing, two approaches are to either generate new data from scratch (if possible) or perturb existing data to create new ones. The latter one is used since mid-1990s. For example, input images can be cropped, rotated, or rescaled to create new examples with the same labels as the original training set.
-
-
-=== Explicit ===
-
-
-==== Early stopping ====
-
-One of the simplest methods to prevent overfitting of a network is to simply stop the training before overfitting has had a chance to occur. It comes with the disadvantage that the learning process is halted.
-
-
-==== Number of parameters ====
-Another simple way to prevent overfitting is to limit the number of parameters, typically by limiting the number of hidden units in each layer or limiting network depth. For convolutional networks, the filter size also affects the number of parameters. Limiting the number of parameters restricts the predictive power of the network directly, reducing the complexity of the function that it can perform on the data, and thus limits the amount of overfitting. This is equivalent to a "zero norm".
-
-
-==== Weight decay ====
-A simple form of added regularizer is weight decay, which simply adds an additional error, proportional to the sum of weights (L1 norm) or squared magnitude (L2 norm) of the weight vector, to the error at each node. The level of acceptable model complexity can be reduced by increasing the proportionality constant('alpha' hyperparameter), thus increasing the penalty for large weight vectors.
-L2 regularization is the most common form of regularization. It can be implemented by penalizing the squared magnitude of all parameters directly in the objective. The L2 regularization has the intuitive interpretation of heavily penalizing peaky weight vectors and preferring diffuse weight vectors. Due to multiplicative interactions between weights and inputs this has the useful property of encouraging the network to use all of its inputs a little rather than some of its inputs a lot.
-L1 regularization is also common. It makes the weight vectors sparse during optimization. In other words, neurons with L1 regularization end up using only a sparse subset of their most important inputs and become nearly invariant to the noisy inputs. L1 with L2 regularization can be combined; this is called elastic net regularization.
-
-
-==== Max norm constraints ====
-Another form of regularization is to enforce an absolute upper bound on the magnitude of the weight vector for every neuron and use projected gradient descent to enforce the constraint. In practice, this corresponds to performing the parameter update as normal, and then enforcing the constraint by clamping the weight vector w→{\displaystyle {\vec {w}}} of every neuron to satisfy ‖w→‖2<c{\displaystyle \|{\vec {w}}\|_{2}<c}. Typical values of c{\displaystyle c} are order of 3–4. Some papers report improvements when using this form of regularization.
-
-
-== Hierarchical coordinate frames ==
-Pooling loses the precise spatial relationships between high-level parts (such as nose and mouth in a face image). These relationships are needed for identity recognition. Overlapping the pools so that each feature occurs in multiple pools, helps retain the information. Translation alone cannot extrapolate the understanding of geometric relationships to a radically new viewpoint, such as a different orientation or scale. On the other hand, people are very good at extrapolating; after seeing a new shape once they can recognize it from a different viewpoint.An earlier common way to deal with this problem is to train the network on transformed data in different orientations, scales, lighting, etc. so that the network can cope with these variations. This is computationally intensive for large data-sets. The alternative is to use a hierarchy of coordinate frames and use a group of neurons to represent a conjunction of the shape of the feature and its pose relative to the retina. The pose relative to the retina is the relationship between the coordinate frame of the retina and the intrinsic features' coordinate frame.Thus, one way to represent something is to embed the coordinate frame within it. This allows large features to be recognized by using the consistency of the poses of their parts (e.g. nose and mouth poses make a consistent prediction of the pose of the whole face). This approach ensures that the higher-level entity (e.g. face) is present when the lower-level (e.g. nose and mouth) agree on its prediction of the pose. The vectors of neuronal activity that represent pose ("pose vectors") allow spatial transformations modeled as linear operations that make it easier for the network to learn the hierarchy of visual entities and generalize across viewpoints. This is similar to the way the human visual system imposes coordinate frames in order to represent shapes.
-
 
 == Applications ==
 
-
 === Image recognition ===
-CNNs are often used in image recognition systems. In 2012, an error rate of 0.23% on the MNIST database was reported. Another paper on using CNN for image classification reported that the learning process was "surprisingly fast"; in the same paper, the best published results as of 2011 were achieved in the MNIST database and the NORB database. Subsequently, a similar CNN called
-AlexNet won the ImageNet Large Scale Visual Recognition Challenge 2012.
-When applied to facial recognition, CNNs achieved a large decrease in error rate. Another paper reported a 97.6% recognition rate on "5,600 still images of more than 10 subjects". CNNs were used to assess video quality in an objective way after manual training; the resulting system had a very low root mean square error.The ImageNet Large Scale Visual Recognition Challenge is a benchmark in object classification and detection, with millions of images and hundreds of object classes. In the ILSVRC 2014, a large-scale visual recognition challenge, almost every highly ranked team used CNN as their basic framework. The winner GoogLeNet (the foundation of DeepDream) increased the mean average precision of object detection to 0.439329, and reduced classification error to 0.06656, the best result to date. Its network applied more than 30 layers. That performance of convolutional neural networks on the ImageNet tests was close to that of humans. The best algorithms still struggle with objects that are small or thin, such as a small ant on a stem of a flower or a person holding a quill in their hand. They also have trouble with images that have been distorted with filters, an increasingly common phenomenon with modern digital cameras. By contrast, those kinds of images rarely trouble humans. Humans, however, tend to have trouble with other issues. For example, they are not good at classifying objects into fine-grained categories such as the particular breed of dog or species of bird, whereas convolutional neural networks handle this.In 2015, a many-layered CNN demonstrated the ability to spot faces from a wide range of angles, including upside down, even when partially occluded, with competitive performance. The network was trained on a database of 200,000 images that included faces at various angles and orientations and a further 20 million images without faces. They used batches of 128 images over 50,000 iterations.
-
 
 === Video analysis ===
-Compared to image data domains, there is relatively little work on applying CNNs to video classification. Video is more complex than images since it has another (temporal) dimension. However, some extensions of CNNs into the video domain have been explored. One approach is to treat space and time as equivalent dimensions of the input and perform convolutions in both time and space. Another way is to fuse the features of two convolutional neural networks, one for the spatial and one for the temporal stream. Long short-term memory (LSTM) recurrent units are typically incorporated after the CNN to account for inter-frame or inter-clip dependencies. Unsupervised learning schemes for training spatio-temporal features have been introduced, based on Convolutional Gated Restricted Boltzmann Machines and Independent Subspace Analysis. It's Application can be seen in Text-to-Video model.
-
 
 === Natural language processing ===
-CNNs have also been explored for natural language processing. CNN models are effective for various NLP problems and achieved excellent results in semantic parsing, search query retrieval, sentence modeling, classification, prediction and other traditional NLP tasks.
-Compared to traditional language processing methods such as recurrent neural networks, CNNs can represent different contextual realities of language that do not rely on a series-sequence assumption, while RNNs are better suitable when classical time series modeling is required.
-
 
 === Anomaly Detection ===
-A CNN with 1-D convolutions was used on time series in the frequency domain (spectral residual) by an unsupervised model to detect anomalies in the time domain.
-
 
 === Drug discovery ===
-CNNs have been used in drug discovery. Predicting the interaction between molecules and biological proteins can identify potential treatments. In 2015, Atomwise introduced AtomNet, the first deep learning neural network for structure-based drug design. The system trains directly on 3-dimensional representations of chemical interactions. Similar to how image recognition networks learn to compose smaller, spatially proximate features into larger, complex structures, AtomNet discovers chemical features, such as aromaticity, sp3 carbons, and hydrogen bonding. Subsequently, AtomNet was used to predict novel candidate biomolecules for multiple disease targets, most notably treatments for the Ebola virus and multiple sclerosis.
-
-
-=== Checkers game ===
-CNNs have been used in the game of checkers. From 1999 to 2001, Fogel and Chellapilla published papers showing how a convolutional neural network could learn to play checker using co-evolution. The learning process did not use prior human professional games, but rather focused on a minimal set of information contained in the checkerboard: the location and type of pieces, and the difference in number of pieces between the two sides. Ultimately, the program (Blondie24) was tested on 165 games against players and ranked in the highest 0.4%. It also earned a win against the program Chinook at its "expert" level of play.
-
-
-=== Go ===
-CNNs have been used in computer Go. In December 2014, Clark and Storkey published a paper showing that a CNN trained by supervised learning from a database of human professional games could outperform GNU Go and win some games against Monte Carlo tree search Fuego 1.1 in a fraction of the time it took Fuego to play. Later it was announced that a large 12-layer convolutional neural network had correctly predicted the professional move in 55% of positions, equalling the accuracy of a 6 dan human player. When the trained convolutional network was used directly to play games of Go, without any search, it beat the traditional search program GNU Go in 97% of games, and matched the performance of the Monte Carlo tree search program Fuego simulating ten thousand playouts (about a million positions) per move.A couple of CNNs for choosing moves to try ("policy network") and evaluating positions ("value network") driving MCTS were used by AlphaGo, the first to beat the best human player at the time.
-
-
-=== Time series forecasting ===
-Recurrent neural networks are generally considered the best neural network architectures for time series forecasting (and sequence modeling in general), but recent studies show that convolutional networks can perform comparably or even better. Dilated convolutions might enable one-dimensional convolutional neural networks to effectively learn time series dependences. Convolutions can be implemented more efficiently than RNN-based solutions, and they do not suffer from vanishing (or exploding) gradients. Convolutional networks can provide an improved forecasting performance when there are multiple similar time series to learn from. CNNs can also be applied to further tasks in time series analysis (e.g., time series classification or quantile forecasting).
-
-
-=== Cultural Heritage and 3D-datasets ===
-As archaeological findings like clay tablets with cuneiform writing are increasingly acquired using 3D scanners first benchmark datasets are becoming available like HeiCuBeDa providing almost 2.000 normalized 2D- and 3D-datasets prepared with the GigaMesh Software Framework. So curvature-based measures are used in conjunction with Geometric Neural Networks (GNNs) e.g. for period classification of those clay tablets being among the oldest documents of human history.
-
-
-== Fine-tuning ==
-For many applications, the training data is less available. Convolutional neural networks usually require a large amount of training data in order to avoid overfitting. A common technique is to train the network on a larger data set from a related domain. Once the network parameters have converged an additional training step is performed using the in-domain data to fine-tune the network weights, this is known as transfer learning. Furthermore, this technique allows convolutional network architectures to successfully be applied to problems with tiny training sets.
-
-
-== Human interpretable explanations ==
-End-to-end training and prediction are common practice in computer vision. However, human interpretable explanations are required for critical systems such as a self-driving cars. With recent advances in visual salience, spatial attention, and temporal attention, the most critical spatial regions/temporal instants could be visualized to justify the CNN predictions.
-
-
-== Related architectures ==
-
-
-=== Deep Q-networks ===
-A deep Q-network (DQN) is a type of deep learning model that combines a deep neural network with Q-learning, a form of reinforcement learning. Unlike earlier reinforcement learning agents, DQNs that utilize CNNs can learn directly from high-dimensional sensory inputs via reinforcement learning.Preliminary results were presented in 2014, with an accompanying paper in February 2015. The research described an application to Atari 2600 gaming. Other deep reinforcement learning models preceded it.
-
-
-=== Deep belief networks ===
-
-Convolutional deep belief networks (CDBN) have structure very similar to convolutional neural networks and are trained similarly to deep belief networks. Therefore, they exploit the 2D structure of images, like CNNs do, and make use of pre-training like deep belief networks. They provide a generic structure that can be used in many image and signal processing tasks. Benchmark results on standard image datasets like CIFAR have been obtained using CDBNs.
-
-
-== Notable libraries ==
-Caffe: A library for convolutional neural networks. Created by the Berkeley Vision and Learning Center (BVLC). It supports both CPU and GPU. Developed in C++, and has Python and MATLAB wrappers.
-Deeplearning4j: Deep learning in Java and Scala on multi-GPU-enabled Spark. A general-purpose deep learning library for the JVM production stack running on a C++ scientific computing engine. Allows the creation of custom layers. Integrates with Hadoop and Kafka.
-Dlib: A toolkit for making real world machine learning and data analysis applications in C++.
-Microsoft Cognitive Toolkit: A deep learning toolkit written by Microsoft with several unique features enhancing scalability over multiple nodes. It supports full-fledged interfaces for training in C++ and Python and with additional support for model inference in C# and Java.
-TensorFlow: Apache 2.0-licensed Theano-like library with support for CPU, GPU, Google's proprietary tensor processing unit (TPU), and mobile devices.
-Theano: The reference deep-learning library for Python with an API largely compatible with the popular NumPy library. Allows user to write symbolic mathematical expressions, then automatically generates their derivatives, saving the user from having to code gradients or backpropagation. These symbolic expressions are automatically compiled to CUDA code for a fast, on-the-GPU implementation.
-Torch: A scientific computing framework with wide support for machine learning algorithms, written in C and Lua.
-
-
-
-Attention (machine learning)
-Convolution
-Deep learning
-Natural-language processing
-Neocognitron
-Scale-invariant feature transform
-Time delay neural network
-Vision processing unit
-
-
-
-
-
-
-
-
-== External links ==
-CS231n: Convolutional Neural Networks for Visual Recognition — Andrej Karpathy's Stanford computer science course on CNNs in computer vision
